@@ -1,4 +1,4 @@
-#include <collision_avoidance_pick_and_place/pick_and_place.h>
+#include <robot_pick_and_place/pick_and_place.h>
 
 /*    SET ATTACHED OBJECT
   Goal:
@@ -9,7 +9,7 @@
   	- Adds or removes the payload from the robot state object.
 */
 
-namespace collision_avoidance_pick_and_place
+namespace robot_pick_and_place
 {
 void PickAndPlace::set_attached_object(bool attach, const geometry_msgs::Pose &pose,moveit_msgs::RobotState &robot_state)
 {

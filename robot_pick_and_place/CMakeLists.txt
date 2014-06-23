@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(collision_avoidance_pick_and_place)
+project(robot_pick_and_place)
 
 find_package(catkin REQUIRED COMPONENTS 
   roscpp

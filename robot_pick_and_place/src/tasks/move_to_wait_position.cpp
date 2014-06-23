@@ -1,4 +1,4 @@
-#include <collision_avoidance_pick_and_place/pick_and_place.h>
+#include <robot_pick_and_place/pick_and_place.h>
 
 /* MOVING ARM TO WAIT POSITION
   Goal:
@@ -10,7 +10,7 @@
     - Once the target is set you can call the 'move' method in order to go to that target.
 */
 
-void collision_avoidance_pick_and_place::PickAndPlace::move_to_wait_position()
+void robot_pick_and_place::PickAndPlace::move_to_wait_position()
 {
   //ROS_ERROR_STREAM("move_to_wait_position is not implemented yet.  Aborting."); exit(1);
 

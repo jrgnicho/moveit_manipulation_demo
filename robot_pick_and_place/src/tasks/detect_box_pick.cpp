@@ -1,4 +1,4 @@
-#include <collision_avoidance_pick_and_place/pick_and_place.h>
+#include <robot_pick_and_place/pick_and_place.h>
 
 /* DETECTING BOX PICK POSE
   Goal:
@@ -10,7 +10,7 @@
     - lookupTransform can also look "in the past".  Use Time=0 to get the most-recent transform.
     - tf::poseTFToMsg allows converting transforms into Pose messages
 */
-geometry_msgs::Pose collision_avoidance_pick_and_place::PickAndPlace::detect_box_pick()
+geometry_msgs::Pose robot_pick_and_place::PickAndPlace::detect_box_pick()
 {
   //ROS_ERROR_STREAM("detect_box_pick is not implemented yet.  Aborting."); exit(1);
 
@@ -23,7 +23,7 @@ geometry_msgs::Pose collision_avoidance_pick_and_place::PickAndPlace::detect_box
   shape.dimensions[2] = cfg.BOX_SIZE.getZ();
 
   // creating request object
-  collision_avoidance_pick_and_place::GetTargetPose srv;
+  robot_pick_and_place::GetTargetPose srv;
   srv.request.shape = shape;
   srv.request.world_frame_id = cfg.WORLD_FRAME_ID;
   srv.request.ar_tag_frame_id = cfg.AR_TAG_FRAME_ID;

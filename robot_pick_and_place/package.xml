@@ -1,16 +1,16 @@
 <?xml version="1.0"?>
 <package>
-  <name>collision_avoidance_pick_and_place</name>
+  <name>robot_pick_and_place</name>
   <version>0.0.0</version>
   <description>
-     The collision_avoidance_pick_and_place package
+     The robot_pick_and_place package
   </description>
 
   <maintainer email="jnicho@swri.org">jnicho</maintainer> -->
   <author email="jnicho@swri.org">jnicho</author>
   <license>BSD</license>
 
-  <url type="website">http://ros.org/wiki/collision_avoidance_pick_and_place</url>
+  <url type="website">http://ros.org/wiki/robot_pick_and_place</url>
 
   <!-- Dependencies can be catkin packages or system dependencies -->
   <buildtool_depend>catkin</buildtool_depend>

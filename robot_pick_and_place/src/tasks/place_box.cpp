@@ -1,4 +1,4 @@
-#include <collision_avoidance_pick_and_place/pick_and_place.h>
+#include <robot_pick_and_place/pick_and_place.h>
 
 /* MOVE ARM THROUGH PLACE POSES
   Goal:
@@ -8,7 +8,7 @@
     - Use the methods seen so far such as 'move', 'sendGoal', 'waitForResult' as needed
 */
 
-void collision_avoidance_pick_and_place::PickAndPlace::place_box(std::vector<geometry_msgs::Pose>& place_poses,
+void robot_pick_and_place::PickAndPlace::place_box(std::vector<geometry_msgs::Pose>& place_poses,
 		const geometry_msgs::Pose& box_pose)
 {
   //ROS_ERROR_STREAM("move_through_place_poses is not implemented yet.  Aborting."); exit(1);

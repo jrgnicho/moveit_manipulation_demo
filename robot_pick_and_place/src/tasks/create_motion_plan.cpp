@@ -1,4 +1,4 @@
-#include <collision_avoidance_pick_and_place/pick_and_place.h>
+#include <robot_pick_and_place/pick_and_place.h>
 
 /* CREATE MOTION PLAN
   Goal:
@@ -11,7 +11,7 @@
 
 */
 
-namespace collision_avoidance_pick_and_place
+namespace robot_pick_and_place
 {
 
 bool PickAndPlace::create_motion_plan(const geometry_msgs::Pose &pose_target,

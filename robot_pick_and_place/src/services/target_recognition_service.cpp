@@ -28,7 +28,7 @@
 #include <tf_conversions/tf_eigen.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
-#include <collision_avoidance_pick_and_place/GetTargetPose.h>
+#include <robot_pick_and_place/GetTargetPose.h>
 #include <math.h>
 
 // alias
@@ -130,8 +130,8 @@ protected:
 		sensor_cloud_msg_ = sensor_msgs::PointCloud2(*msg);
 	}
 
-	bool target_recognition_callback(collision_avoidance_pick_and_place::GetTargetPose::Request& req,
-			collision_avoidance_pick_and_place::GetTargetPose::Response& res)
+	bool target_recognition_callback(robot_pick_and_place::GetTargetPose::Request& req,
+			robot_pick_and_place::GetTargetPose::Response& res)
 	{
 		// transforms
 		tf::StampedTransform world_to_sensor_tf;

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-import roslib; roslib.load_manifest('collision_avoidance_pick_and_place')
+import roslib; roslib.load_manifest('robot_pick_and_place')
 import rospy
 import tf
 import shape_msgs
-import collision_avoidance_pick_and_place.srv
-from collision_avoidance_pick_and_place.srv import *
+import robot_pick_and_place.srv
+from robot_pick_and_place.srv import *
 
 
 #constants

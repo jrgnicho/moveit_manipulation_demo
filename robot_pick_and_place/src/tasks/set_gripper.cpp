@@ -1,4 +1,4 @@
-#include <collision_avoidance_pick_and_place/pick_and_place.h>
+#include <robot_pick_and_place/pick_and_place.h>
 
 /*    SET GRIPPER
   Goal:
@@ -7,7 +7,7 @@
   	  - Use the grasp action client to send an grasp request to the grasp server.
   	  - Confirm that the gripper was successfully opened or closed and exit on error
 */
-void collision_avoidance_pick_and_place::PickAndPlace::set_gripper(bool do_grasp)
+void robot_pick_and_place::PickAndPlace::set_gripper(bool do_grasp)
 {
   //ROS_ERROR_STREAM("set_gripper is not implemented yet.  Aborting."); exit(1);
 

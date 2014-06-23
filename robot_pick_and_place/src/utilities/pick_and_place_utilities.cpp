@@ -5,7 +5,7 @@
  *      Author: ros-industrial
  */
 
-#include <collision_avoidance_pick_and_place/pick_and_place_utilities.h>
+#include <robot_pick_and_place/pick_and_place_utilities.h>
 #include <moveit/kinematic_constraints/utils.h>
 #include <tf/transform_listener.h>
 #include <boost/assign/std/vector.hpp>

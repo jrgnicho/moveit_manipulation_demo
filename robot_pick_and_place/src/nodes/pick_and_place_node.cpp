@@ -1,6 +1,6 @@
-#include <collision_avoidance_pick_and_place/pick_and_place.h>
+#include <robot_pick_and_place/pick_and_place.h>
 
-using namespace collision_avoidance_pick_and_place;
+using namespace robot_pick_and_place;
 
 // =============================== Main Thread ===============================
 int main(int argc,char** argv)
@@ -59,7 +59,7 @@ int main(int argc,char** argv)
 		  application.cfg.MARKER_TOPIC,1);
 
   // target recognition client (perception)
-  application.target_recognition_client = nh.serviceClient<collision_avoidance_pick_and_place::GetTargetPose>(
+  application.target_recognition_client = nh.serviceClient<robot_pick_and_place::GetTargetPose>(
 		  application.cfg.TARGET_RECOGNITION_SERVICE);
 
   // grasp action client (vacuum gripper)

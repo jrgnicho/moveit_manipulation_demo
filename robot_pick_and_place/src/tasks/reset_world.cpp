@@ -1,10 +1,10 @@
-#include <collision_avoidance_pick_and_place/pick_and_place.h>
+#include <robot_pick_and_place/pick_and_place.h>
 
 /*    RESET WORLD
   Goal:
   Hints:
 */
-void collision_avoidance_pick_and_place::PickAndPlace::reset_world(bool refresh_octomap)
+void robot_pick_and_place::PickAndPlace::reset_world(bool refresh_octomap)
 {
 
 	// detach box if one is attached

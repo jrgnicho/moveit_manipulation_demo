@@ -2,8 +2,8 @@
 <launch>
 
   <!-- pick and place node -->
-  <node pkg="collision_avoidance_pick_and_place" type="pick_and_place_node" name="pick_and_place_node" output="screen" required="true">
-    <rosparam command="load" file="$(find collision_avoidance_pick_and_place)/config/ur5/pick_and_place_parameters.yaml"/>
+  <node pkg="robot_pick_and_place" type="pick_and_place_node" name="pick_and_place_node" output="screen" required="true">
+    <rosparam command="load" file="$(find robot_pick_and_place)/config/ur5/pick_and_place_parameters.yaml"/>
   </node>
 
   <include file="$(find ur5_collision_avoidance_moveit_config)/launch/move_group.launch">

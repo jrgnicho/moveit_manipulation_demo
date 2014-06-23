@@ -2,7 +2,7 @@
 import argparse
 import sys
 import shlex
-import roslib; roslib.load_manifest('collision_avoidance_pick_and_place')
+import roslib; roslib.load_manifest('robot_pick_and_place')
 import rospy
 import tf
 import shape_msgs
@@ -15,7 +15,7 @@ from geometry_msgs.msg import Pose
 
 #constants
 COLLISION_OBJECT_TOPIC = "collision_object";
-PACKAGE_PATH = roslib.packages.get_pkg_dir('collision_avoidance_pick_and_place')
+PACKAGE_PATH = roslib.packages.get_pkg_dir('robot_pick_and_place')
 
 def create_collision_object(shape_type,pos,size,frame_id,op,object_id):
 

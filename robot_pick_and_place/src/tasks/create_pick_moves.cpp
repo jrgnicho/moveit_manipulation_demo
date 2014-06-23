@@ -1,4 +1,4 @@
-#include <collision_avoidance_pick_and_place/pick_and_place.h>
+#include <robot_pick_and_place/pick_and_place.h>
 
 /* CREATE PICK MOVES
   Goal:
@@ -15,7 +15,7 @@
     - Use the 'transform_from_tcp_to_wrist' function to populate the 'wrist_pick_poses' array.
 */
 
-std::vector<geometry_msgs::Pose> collision_avoidance_pick_and_place::PickAndPlace::create_pick_moves(geometry_msgs::Pose &box_pose)
+std::vector<geometry_msgs::Pose> robot_pick_and_place::PickAndPlace::create_pick_moves(geometry_msgs::Pose &box_pose)
 {
   //ROS_ERROR_STREAM("create_pick_moves is not implemented yet.  Aborting."); exit(1);
 

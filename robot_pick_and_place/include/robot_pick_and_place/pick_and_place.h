@@ -8,7 +8,7 @@
 #include <object_manipulation_msgs/GraspHandPostureExecutionAction.h>
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
-#include <collision_avoidance_pick_and_place/pick_and_place_utilities.h>
+#include <robot_pick_and_place/pick_and_place_utilities.h>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit_msgs/GetMotionPlan.h>
@@ -22,7 +22,7 @@ typedef boost::shared_ptr<GraspActionClient> GraspActionClientPtr;
 typedef boost::shared_ptr<move_group_interface::MoveGroup> MoveGroupPtr;
 typedef boost::shared_ptr<tf::TransformListener> TransformListenerPtr;
 
-namespace collision_avoidance_pick_and_place
+namespace robot_pick_and_place
 {
 	class PickAndPlace
 	{
