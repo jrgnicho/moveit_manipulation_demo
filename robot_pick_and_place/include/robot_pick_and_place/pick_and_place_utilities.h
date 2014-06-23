@@ -8,6 +8,8 @@
 #include <visualization_msgs/Marker.h>
 #include <robot_pick_and_place/GetTargetPose.h>
 
+namespace robot_pick_and_place{
+
 std::vector<geometry_msgs::Pose> create_manipulation_poses(double retreat_dis,
 		double approach_dis,const tf::Transform &target_tf);
 
@@ -21,7 +23,7 @@ moveit_msgs::Constraints create_path_orientation_constraints(const geometry_msgs
 		float x_tolerance,float y_tolerance,float z_tolerance,std::string link_name);
 
 
-class pick_and_place_config
+class PickAndPlaceConfig
 {
 public:
 
@@ -52,7 +54,7 @@ public:
   moveit_msgs::CollisionObject ATTACHED_OBJECT; // attached object message
   geometry_msgs::Pose TCP_TO_BOX_POSE;
 
-  pick_and_place_config()
+  PickAndPlaceConfig()
   {
     ARM_GROUP_NAME  = "manipulator";
     TCP_LINK_NAME   = "tcp_frame";
@@ -76,5 +78,6 @@ public:
 
   bool init();
 };
+}
 
 #endif /* PICK_AND_PLACE_UTILITIES_H_ */

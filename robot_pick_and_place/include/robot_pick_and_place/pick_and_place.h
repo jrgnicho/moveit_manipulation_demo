@@ -34,7 +34,7 @@ namespace robot_pick_and_place
 		}
 
 	// =============================== global members =====================================
-		pick_and_place_config cfg;
+		PickAndPlaceConfig cfg;
 		ros::Publisher marker_publisher;
 		ros::Publisher planning_scene_publisher;
 		ros::ServiceClient target_recognition_client;

@@ -15,6 +15,9 @@
 using namespace tf;
 using namespace boost::assign;
 
+namespace robot_pick_and_place
+{
+
 // =============================== Utility functions ===============================
 
 std::vector<geometry_msgs::Pose> create_manipulation_poses(double retreat_dis,double approach_dis,const tf::Transform &target_tf)
@@ -90,7 +93,7 @@ std::ostream& operator<<(std::ostream& os, const geometry_msgs::Point pt)
   return os << "[" << pt.x << ", " << pt.y << ", " << pt.z << "]";
 }
 
-bool pick_and_place_config::init()
+bool PickAndPlaceConfig::init()
 {
   ros::NodeHandle nh("~");
   double w, l, h, x, y, z;
@@ -171,5 +174,7 @@ bool pick_and_place_config::init()
   {
     return false;
   }
+
+}
 
 }
