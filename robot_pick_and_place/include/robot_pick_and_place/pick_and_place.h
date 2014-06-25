@@ -9,6 +9,7 @@
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
 #include <robot_pick_and_place/pick_and_place_utilities.h>
+#include <robot_pick_and_place/GraspPose.h>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit_msgs/GetMotionPlan.h>
@@ -38,6 +39,7 @@ namespace robot_pick_and_place
 		ros::Publisher marker_publisher;
 		ros::Publisher planning_scene_publisher;
 		ros::ServiceClient target_recognition_client;
+		ros::ServiceClient grasp_pose_client;
 		ros::ServiceClient motion_plan_client;
 		GraspActionClientPtr grasp_action_client_ptr;
 		MoveGroupPtr move_group_ptr;
@@ -54,6 +56,8 @@ namespace robot_pick_and_place
 		void reset_world(bool refresh_octomap = true);
 
 		geometry_msgs::Pose detect_box_pick();
+
+		geometry_msgs::Pose detect_target_pose();
 
 		std::vector<geometry_msgs::Pose> create_pick_moves(geometry_msgs::Pose &box_pose);
 
