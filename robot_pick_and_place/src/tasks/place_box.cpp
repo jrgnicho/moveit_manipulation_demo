@@ -34,7 +34,7 @@ void robot_pick_and_place::PickAndPlace::place_box(std::vector<geometry_msgs::Po
   	if(i==0 || i == 1)
   	{
       // attaching box
-      set_attached_object(true,box_pose,robot_state);
+      set_attached_object(false,box_pose,robot_state);
       show_box(true);
 
   	}
