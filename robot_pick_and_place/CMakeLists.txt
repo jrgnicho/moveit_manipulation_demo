@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_msgs
   tf_conversions
 	message_generation
+	handle_detector
 )
 
 include_directories(include
@@ -31,6 +32,7 @@ include_directories(include
 add_service_files(
    FILES
    GetTargetPose.srv
+	 GraspPose.srv
 )
 
 ## Generate added messages and services with any dependencies listed here
@@ -38,7 +40,8 @@ generate_messages(
 	DEPENDENCIES   
 		std_msgs
 		shape_msgs
-		pcl_msgs)
+		pcl_msgs
+		visualization_msgs)
 
 ###################################
 ## catkin specific configuration ##
@@ -67,6 +70,10 @@ catkin_package(
 ## Build ##
 ###########
 
+add_executable(grasp_pose_service src/services/grasp_pose_service.cpp)
+add_dependencies(grasp_pose_service ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(grasp_pose_service ${catkin_LIBRARIES})
+
 add_executable(target_recognition_service src/services/target_recognition_service.cpp)
 add_dependencies(target_recognition_service ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(target_recognition_service ${catkin_LIBRARIES})
@@ -82,6 +89,7 @@ add_executable(pick_and_place_node
 	src/tasks/reset_world.cpp
 	src/tasks/set_attached_object.cpp
 	src/tasks/detect_box_pick.cpp
+	src/tasks/detect_target_pose.cpp
 	src/tasks/create_pick_moves.cpp
   src/tasks/create_place_moves.cpp
 	src/tasks/pickup_box.cpp
