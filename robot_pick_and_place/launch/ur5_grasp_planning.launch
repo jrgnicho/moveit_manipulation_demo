@@ -1,0 +1,38 @@
+<?xml version="1.0" ?>
+<launch>
+
+  <remap from="sensor_cloud" to="/kinect/depth_registered/points"/>
+	<node name="grasp_poses_service" pkg="handle_detector" type="handle_detector_grasp_poses_service" output="screen">
+		<!-- affordance search parameters -->
+    <param name="file" value="$(find handle_detection_test)/pcd/cylinders.pcd" />
+		<param name="target_radius" value="0.05" />
+		<param name="target_radius_error" value="0.05" />
+		<param name="affordance_gap" value="0.008" />
+		<param name="sample_size" value="1000" />		
+		<param name="use_clearance_filter" value="true" />
+		<param name="use_occlusion_filter" value="true" />
+    <param name="curvature_estimator" value="0" />
+		<param name="point_cloud_source" value="0" />
+		<param name="update_interval" value="3.0" />
+		
+		<!-- RANSAC parameters -->
+		<param name="ransac_runs" value="100" />
+		<param name="ransac_min_inliers" value="2" />
+		<param name="ransac_dist_radius" value="0.06" />
+		<param name="ransac_orient_radius" value="0.2" />
+		<param name="ransac_radius_radius" value="0.01" />
+				
+		<!-- workspace limits -->
+		<param name="max_range" value="1.2" />
+		<param name="workspace_min_x" value="-2.0" />
+		<param name="workspace_max_x" value="-0.4" />
+		<param name="workspace_min_y" value="-0.4" />
+		<param name="workspace_max_y" value="0.4" />
+		<param name="workspace_min_z" value="0.02" />
+		<param name="workspace_max_z" value="2.0" />
+		
+		<!-- number of threads to use -->
+		<param name="num_threads" value="8" />
+	</node>
+
+</launch>
