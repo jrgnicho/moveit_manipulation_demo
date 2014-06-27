@@ -31,8 +31,6 @@
   <build_depend>tf_conversions</build_depend>
 	<build_depend>handle_detector</build_depend>
 	<build_depend>message_generation</build_depend>
-	
-
 
   <run_depend>roscpp</run_depend>
   <run_depend>moveit_msgs</run_depend>
