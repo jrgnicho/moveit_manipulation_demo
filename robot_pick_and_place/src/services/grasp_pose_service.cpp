@@ -14,6 +14,16 @@
 #include <robot_pick_and_place/GetTargetPose.h>
 #include <handle_detector/HandleListMsg.h>
 #include <robot_pick_and_place/GraspPose.h>
+#include <sensor_msgs/point_cloud_conversion.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/ros/conversions.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/filters/passthrough.h>
+#include <pcl/common/centroid.h>
+#include <pcl_ros/transforms.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/common/common.h>
 #include <math.h>
 
 // constants
@@ -27,6 +37,9 @@ namespace tf
 {
 	typedef boost::shared_ptr<tf::TransformListener> TransformListenerPtr;
 }
+
+typedef pcl::PointCloud<pcl::PointXYZ> Cloud;
+typedef pcl::PointCloud<pcl::PointXYZRGBA> CloudRGBA;
 
 class GraspPoseServer
 {
@@ -255,6 +268,37 @@ protected:
 		return true;
 	}
 
+	bool filter_workspace(const sensor_msgs::PointCloud2 &sensor_msg,sensor_msgs::PointCloud2 &filtered_msg)
+	{
+		Cloud sensor_cloud, filtered_cloud, temp;
+		pcl::fromROSMsg(sensor_msg,sensor_cloud);
+
+		// filtering workspace bounds
+		pcl::PassThrough<pcl::PointXYZ> filter;
+
+		// remove z limits
+		filter.setInputCloud(sensor_cloud.makeShared());
+		filter.setFilterFieldName("z");
+		filter.setFilterLimits(workspace_min_.getZ(),workspace_max_.getZ());
+		filter.filter(sensor_cloud);
+
+		// remove y limits
+		filter.setInputCloud(sensor_cloud.makeShared());
+		filter.setFilterFieldName("y");
+		filter.setFilterLimits(workspace_min_.getY(),workspace_max_.getY());
+		filter.filter(sensor_cloud);
+
+		// remove x limits
+		filter.setInputCloud(sensor_cloud.makeShared());
+		filter.setFilterFieldName("x");
+		filter.setFilterLimits(workspace_min_.getX(),workspace_max_.getX());
+		filter.filter(filtered_cloud);
+
+		pcl::toROSMsg(filtered_cloud,filtered_msg);
+
+		return !filtered_cloud.empty();
+	}
+
 
 protected:
 
@@ -268,7 +312,11 @@ protected:
 	ros::Publisher filtered_cloud_pub_;
 
 	// tf
-	tf::TransformListenerPtr tf_listener_ptr_;;
+	tf::TransformListenerPtr tf_listener_ptr_;
+
+	// parameters
+	tf::Vector3 workspace_min_;
+	tf::Vector3 workspace_max_;
 };
 
 int main(int argc,char** argv)
