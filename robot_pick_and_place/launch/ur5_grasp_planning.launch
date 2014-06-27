@@ -5,20 +5,20 @@
 	<node name="grasp_poses_service" pkg="handle_detector" type="handle_detector_grasp_poses_service" output="screen">
 		<!-- affordance search parameters -->
     <param name="file" value="$(find handle_detection_test)/pcd/cylinders.pcd" />
-		<param name="target_radius" value="0.05" />
-		<param name="target_radius_error" value="0.05" />
+		<param name="target_radius" value="0.03" />
+		<param name="target_radius_error" value="0.01" />
 		<param name="affordance_gap" value="0.008" />
-		<param name="sample_size" value="1000" />		
+		<param name="sample_size" value="500" />		
 		<param name="use_clearance_filter" value="true" />
 		<param name="use_occlusion_filter" value="true" />
-    <param name="curvature_estimator" value="0" />
+    <param name="curvature_estimator" value="1" />
 		<param name="point_cloud_source" value="0" />
 		<param name="update_interval" value="3.0" />
 		
 		<!-- RANSAC parameters -->
-		<param name="ransac_runs" value="100" />
-		<param name="ransac_min_inliers" value="2" />
-		<param name="ransac_dist_radius" value="0.06" />
+		<param name="ransac_runs" value="40" />
+		<param name="ransac_min_inliers" value="20" />
+		<param name="ransac_dist_radius" value="0.01" />
 		<param name="ransac_orient_radius" value="0.2" />
 		<param name="ransac_radius_radius" value="0.01" />
 				

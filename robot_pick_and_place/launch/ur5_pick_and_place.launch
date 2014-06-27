@@ -4,14 +4,16 @@
   <!-- pick and place node -->
   <node pkg="robot_pick_and_place" type="pick_and_place_node" name="pick_and_place_node" output="screen" required="true">
     <rosparam command="load" file="$(find robot_pick_and_place)/config/ur5/pick_and_place_parameters.yaml"/>
+		<rosparam command="load" file="$(find ur5_2fgripper_moveit_config)/config/kinematics.yaml"/>
   </node>
 
-  <include file="$(find ur5_collision_avoidance_moveit_config)/launch/move_group.launch">
+	<!-- moveit -->
+  <include file="$(find ur5_2fgripper_moveit_config)/launch/move_group.launch">
     <arg name="publish_monitored_planning_scene" value="true" />
   </include>
 
-  <rosparam command="load" file="$(find ur5_collision_avoidance_moveit_config)/config/joint_names.yaml"/>
+  <rosparam command="load" file="$(find ur5_2fgripper_moveit_config)/config/joint_names.yaml"/>
 
-  <include file="$(find ur5_collision_avoidance_moveit_config)/launch/default_warehouse_db.launch" />
+  <include file="$(find ur5_2fgripper_moveit_config)/launch/default_warehouse_db.launch" />
 
 </launch>
