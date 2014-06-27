@@ -62,9 +62,18 @@ int main(int argc,char** argv)
   application.target_recognition_client = nh.serviceClient<robot_pick_and_place::GetTargetPose>(
 		  application.cfg.TARGET_RECOGNITION_SERVICE);
 
+  application.grasp_pose_client = nh.serviceClient<handle_detector::GraspPoseCandidates>(
+		  application.cfg.GRASP_POSES_SERVICE);
+
   // grasp action client (vacuum gripper)
   application.grasp_action_client_ptr = GraspActionClientPtr(
 		  new GraspActionClient(application.cfg.GRASP_ACTION_NAME,true));
+
+  // ik client (inverse kinematics)
+  application.ik_client = nh.serviceClient<moveit_msgs::GetPositionIK>(application.cfg.IK_SERVICE);
+
+  // robot state check client
+  application.state_check_client = nh.serviceClient<moveit_msgs::GetStateValidity>("check_state_validity");
 
 
   // waiting to establish connections
@@ -74,9 +83,11 @@ int main(int argc,char** argv)
     ROS_INFO_STREAM("Waiting for grasp action servers");
   }
 
-  if(ros::ok() && !application.target_recognition_client.waitForExistence(ros::Duration(2.0f)))
+  if(ros::ok() && !application.grasp_pose_client.waitForExistence(ros::Duration(2.0f))
+		  && !application.ik_client.waitForExistence(ros::Duration(2.0f))
+		  && !application.state_check_client.waitForExistence(ros::Duration(2.0f)))
   {
-	  ROS_INFO_STREAM("Waiting for service'"<<application.cfg.TARGET_RECOGNITION_SERVICE<<"'");
+	  ROS_INFO_STREAM("Waiting for services");
   }
 
 
@@ -91,7 +102,7 @@ int main(int argc,char** argv)
   application.set_gripper(false);
 
   // get the box position and orientation
-  box_pose = application.detect_box_pick();
+  box_pose = application.detect_target_pose();
 
   // build a sequence of poses to "pick" the box
   pick_poses = application.create_pick_moves(box_pose);
