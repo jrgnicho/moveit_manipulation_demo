@@ -20,21 +20,21 @@ namespace robot_pick_and_place
 
 // =============================== Utility functions ===============================
 
-std::vector<geometry_msgs::Pose> create_manipulation_poses(double retreat_dis,double approach_dis,const tf::Transform &target_tf)
+std::vector<geometry_msgs::Pose> create_manipulation_poses(double retreat_dis,double approach_dis,const tf::Transform &tcp_at_target_tf)
 {
   geometry_msgs::Pose start_pose, target_pose, end_pose;
   std::vector<geometry_msgs::Pose> poses;
 
   // creating start pose by applying a translation along +z by approach distance
-  //tf::poseTFToMsg(Transform(Quaternion::getIdentity(),Vector3(0,0,approach_dis))*target_tf,start_pose);
-  tf::poseTFToMsg(target_tf*Transform(Quaternion::getIdentity(),Vector3(0,0,-approach_dis)),start_pose);
+  //tf::poseTFToMsg(Transform(Quaternion::getIdentity(),Vector3(0,0,approach_dis))*tcp_at_target_tf,start_pose);
+  tf::poseTFToMsg(tcp_at_target_tf*Transform(Quaternion::getIdentity(),Vector3(0,0,-approach_dis)),start_pose);
 
   // converting target pose
-  tf::poseTFToMsg(target_tf,target_pose);
+  tf::poseTFToMsg(tcp_at_target_tf,target_pose);
 
   // creating end pose by applying a translation along +z by retreat distance
-  tf::poseTFToMsg(Transform(Quaternion::getIdentity(),Vector3(0,0,retreat_dis))*target_tf,end_pose);
-  //tf::poseTFToMsg(target_tf*Transform(Quaternion::getIdentity(),Vector3(0,0,-retreat_dis)),end_pose);
+  //tf::poseTFToMsg(Transform(Quaternion::getIdentity(),Vector3(0,0,retreat_dis))*tcp_at_target_tf,end_pose);
+  tf::poseTFToMsg(tcp_at_target_tf*Transform(Quaternion::getIdentity(),Vector3(0,0,-retreat_dis)),end_pose);
 
   poses.clear();
   poses.push_back(start_pose);
