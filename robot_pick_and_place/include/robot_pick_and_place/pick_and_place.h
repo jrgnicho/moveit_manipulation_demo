@@ -15,6 +15,7 @@
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit_msgs/GetMotionPlan.h>
+#include <moveit_msgs/GetPlanningScene.h>
 #include <moveit/robot_state/conversions.h>
 #include <moveit/kinematic_constraints/utils.h>
 #include <geometric_shapes/shape_operations.h>
@@ -24,34 +25,27 @@ typedef actionlib::SimpleActionClient<object_manipulation_msgs::GraspHandPosture
 typedef boost::shared_ptr<GraspActionClient> GraspActionClientPtr;
 typedef boost::shared_ptr<move_group_interface::MoveGroup> MoveGroupPtr;
 typedef boost::shared_ptr<tf::TransformListener> TransformListenerPtr;
+typedef std::vector<move_group_interface::MoveGroup::Plan> MotionPlanArray;
+typedef std::vector<moveit_msgs::RobotState> RobotStateMsgArray;
 
 namespace robot_pick_and_place
 {
 	class PickAndPlace
 	{
 	public:
-	// =============================== constructor =====================================
 		PickAndPlace()
 		{
 
 		}
 
-	// =============================== global members =====================================
-		PickAndPlaceConfig cfg;
-		ros::Publisher marker_publisher;
-		ros::Publisher planning_scene_publisher;
-		ros::ServiceClient target_recognition_client;
-		ros::ServiceClient grasp_pose_client;
-		ros::ServiceClient ik_client;
-		ros::ServiceClient state_check_client;
-		ros::ServiceClient motion_plan_client;
-		GraspActionClientPtr grasp_action_client_ptr;
-		MoveGroupPtr move_group_ptr;
-		TransformListenerPtr transform_listener_ptr;
-		moveit::core::RobotStatePtr kinematic_state_ptr;
-		moveit::core::RobotModelPtr kinematic_model_ptr;
+		bool init();
 
-	// =============================== Task Functions ===============================
+		void run();
+
+	protected:
+
+		bool load_parameters();
+
 		void move_to_wait_position();
 
 		void set_gripper(bool do_grasp);
@@ -63,7 +57,7 @@ namespace robot_pick_and_place
 
 		geometry_msgs::Pose detect_box_pick();
 
-		geometry_msgs::Pose detect_target_pose();
+		geometry_msgs::Pose detect_target_poses();
 
 		std::vector<geometry_msgs::Pose> create_pick_moves(geometry_msgs::Pose &box_pose);
 
@@ -86,6 +80,52 @@ namespace robot_pick_and_place
 			// publish messages
 			marker_publisher.publish(cfg.MARKER_MESSAGE);
 		}
+
+		void scene_update_callback(planning_scene_monitor::PlanningSceneMonitor::SceneUpdateType t);
+
+		bool update_planning_scene();
+
+		bool evaluate_poses(std::vector<geometry_msgs::Pose>& tcp_poses);
+
+		bool create_pick_motion_plans(const geometry_msgs::PoseArray &tcp_poses,MotionPlanArray& mp);
+
+		bool create_place_motion_plans(const geometry_msgs::PoseArray &tcp_poses,MotionPlanArray& mp);
+
+
+	protected:
+
+		// parameters
+		PickAndPlaceConfig cfg;
+
+		// ros comm
+		ros::Publisher marker_publisher;
+		ros::Publisher planning_scene_publisher;
+		ros::ServiceClient target_recognition_client;
+		ros::ServiceClient planning_scene_client;
+		ros::ServiceClient grasp_pose_client;
+		ros::ServiceClient ik_client;
+		ros::ServiceClient motion_plan_client;
+		GraspActionClientPtr grasp_action_client_ptr;
+
+		// moveit
+		MoveGroupPtr move_group_ptr;
+		moveit::core::RobotStatePtr kinematic_state_ptr;
+		moveit::core::RobotModelPtr kinematic_model_ptr;
+		planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_ptr_;
+		planning_scene::PlanningScenePtr planning_scene_ptr;
+
+		// motion planning
+		MotionPlanArray pick_motion_plans_;
+		MotionPlanArray place_motion_plans_;
+
+		// planning support
+		moveit_msgs::CollisionObject target_obj_on_world_;
+		moveit_msgs::AttachedCollisionObject target_obj_attached_;
+
+
+		// tf
+		TransformListenerPtr transform_listener_ptr;
+
 
 	};
 }
