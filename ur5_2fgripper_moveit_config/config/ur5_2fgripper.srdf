@@ -16,7 +16,7 @@
     <group_state name="wait" group="manipulator">
         <joint name="elbow_joint" value="0.8666" />
         <joint name="shoulder_lift_joint" value="-0.706" />
-        <joint name="shoulder_pan_joint" value="1.3237" />
+        <joint name="shoulder_pan_joint" value="1.9325" />
         <joint name="wrist_1_joint" value="-1.4837" />
         <joint name="wrist_2_joint" value="-1.5884" />
         <joint name="wrist_3_joint" value="-0.0529" />
