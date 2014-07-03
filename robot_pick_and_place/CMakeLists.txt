@@ -84,17 +84,18 @@ target_link_libraries(generate_cloud_node ${catkin_LIBRARIES})
 
 add_executable(pick_and_place_node 
 	src/nodes/pick_and_place_node.cpp
-	src/tasks/move_to_wait_position.cpp
-	src/tasks/set_gripper.cpp
-	src/tasks/reset_world.cpp
-	src/tasks/set_attached_object.cpp
-	src/tasks/detect_box_pick.cpp
-	src/tasks/detect_target_pose.cpp
-	src/tasks/create_pick_moves.cpp
-  src/tasks/create_place_moves.cpp
-	src/tasks/pickup_box.cpp
-	src/tasks/place_box.cpp	
-	src/tasks/create_motion_plan.cpp
+	src/pick_and_place.cpp
+	#src/tasks/move_to_wait_position.cpp
+	#src/tasks/set_gripper.cpp
+	#src/tasks/reset_world.cpp
+	#src/tasks/set_attached_object.cpp
+	#src/tasks/detect_box_pick.cpp
+	#src/tasks/detect_target_pose.cpp
+	#src/tasks/create_pick_moves.cpp
+  #src/tasks/create_place_moves.cpp
+	#src/tasks/pickup_box.cpp
+	#src/tasks/place_box.cpp	
+	#src/tasks/create_motion_plan.cpp
 	src/utilities/pick_and_place_utilities.cpp)
 add_dependencies(pick_and_place_node ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(pick_and_place_node ${catkin_LIBRARIES})
