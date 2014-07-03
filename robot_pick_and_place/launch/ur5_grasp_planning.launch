@@ -4,11 +4,11 @@
   <remap from="sensor_cloud" to="/kinect/depth_registered/points"/>
 	<node name="grasp_poses_service" pkg="handle_detector" type="handle_detector_grasp_poses_service" output="screen">
 		<!-- affordance search parameters -->
-    <param name="file" value="$(find handle_detection_test)/pcd/cylinders.pcd" />
+    <param name="file" value="$(find robot_pick_and_place)/pcd/cylinders.pcd" />
 		<param name="target_radius" value="0.03" />
-		<param name="target_radius_error" value="0.01" />
-		<param name="affordance_gap" value="0.008" />
-		<param name="sample_size" value="500" />		
+		<param name="target_radius_error" value="0.03" />
+		<param name="affordance_gap" value="0.01" />
+		<param name="sample_size" value="200" />		
 		<param name="use_clearance_filter" value="true" />
 		<param name="use_occlusion_filter" value="true" />
     <param name="curvature_estimator" value="1" />
@@ -16,10 +16,10 @@
 		<param name="update_interval" value="3.0" />
 		
 		<!-- RANSAC parameters -->
-		<param name="ransac_runs" value="40" />
-		<param name="ransac_min_inliers" value="20" />
+		<param name="ransac_runs" value="80" />
+		<param name="ransac_min_inliers" value="10" />
 		<param name="ransac_dist_radius" value="0.01" />
-		<param name="ransac_orient_radius" value="0.2" />
+		<param name="ransac_orient_radius" value="0.1" />
 		<param name="ransac_radius_radius" value="0.01" />
 				
 		<!-- workspace limits -->
@@ -33,6 +33,9 @@
 		
 		<!-- number of threads to use -->
 		<param name="num_threads" value="8" />
+
+		<!-- surface detection -->
+		<rosparam command="load" file="$(find robot_pick_and_place)/config/ur5/surface_detection.yaml"/>
 	</node>
 
 </launch>

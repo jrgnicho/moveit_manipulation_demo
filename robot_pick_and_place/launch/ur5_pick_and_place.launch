@@ -5,6 +5,9 @@
   <node pkg="robot_pick_and_place" type="pick_and_place_node" name="pick_and_place_node" output="screen" required="true">
     <rosparam command="load" file="$(find robot_pick_and_place)/config/ur5/pick_and_place_parameters.yaml"/>
 		<rosparam command="load" file="$(find ur5_2fgripper_moveit_config)/config/kinematics.yaml"/>
+		<param name="octomap_frame" type="string" value="world_frame" />
+		<param name="octomap_resolution" type="double" value="0.01" />
+		<param name="max_range" type="double" value="5.0" />
   </node>
 
 	<!-- moveit -->

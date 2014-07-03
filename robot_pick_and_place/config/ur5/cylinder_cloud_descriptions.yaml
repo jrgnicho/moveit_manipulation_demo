@@ -1,0 +1,38 @@
+frame_id: /world_frame
+point_cloud_descriptions:
+  - x: -0.8
+    y: 0.0
+    z: 0.05
+    rx: 0.0
+    ry: 0.0
+    rz: 0.78
+    l: 0.02 # radius
+    w: 0.14
+    h: 0.10
+    shape: 2 # BOX=1, CYLINDER=2, SPHERE=3, CONE=4
+    resolution: 0.005
+  - x: -0.8
+    y: 0.2
+    z: 0.07
+    rx: 0.0
+    ry: 0.0
+    rz: 0.78
+    l: 0.01
+    w: 0.14
+    h: 0.14
+    shape: 2 # BOX=1, CYLINDER=2, SPHERE=3, CONE=4
+    resolution: 0.005
+  - x: -0.82
+    y: -0.2
+    z: 0.08
+    rx: 0.0
+    ry: 0.0
+    rz: 0.78
+    l: 0.015
+    w: 0.14
+    h: 0.16
+    shape: 2 # BOX=1, CYLINDER=2, SPHERE=3, CONE=4
+    resolution: 0.005
+
+
+

@@ -48,21 +48,22 @@
 	<!-- simulated sensor mode -->
 	<group if="$(arg sim_sensor)">
 		
-		<!-- detection node -->
-		<!--<include file="$(find robot_pick_and_place)/launch/ur5_grasp_planning.launch"/>-->
+		<!-- grasp planning node
+		<include file="$(find robot_pick_and_place)/launch/ur5_grasp_planning.launch"/> -->
 
 		<!-- simulated sensor data -->
 		<!--<include file="$(find robot_pick_and_place)/launch/ur5_generate_test_cloud_obstacles.launch"/>-->
 
 		<!-- point cloud publisher -->
-		<!--<node pkg="pcl_ros" name="point_cloud_publisher" type="pcd_to_pointcloud" args="$(find handle_detection_test)/pcd/acquired_cylinders_data.pcd 0.1">
+		<remap from="cloud_pcd" to="/kinect/depth_registered/points"/>
+		<node pkg="pcl_ros" name="point_cloud_publisher" type="pcd_to_pointcloud" args="$(find robot_pick_and_place)/pcd/cylinders05.pcd 0.1">
 			<param name="frame_id" value="/kinect_rgb_optical_frame"/>
-		</node>-->
+		</node>
 
 		<remap from="generated_cloud" to="/kinect/depth_registered/points"/>
-		<node pkg="industrial_pcl_utilities" type="pcl_msg_generator_node" name="point_cloud_generator_node" output="screen">
-			<rosparam command="load" file="$(find handle_detection_test)/config/cylinder_cloud_descriptions.yaml"/>
-		</node>
+		<!--<node pkg="industrial_pcl_utilities" type="pcl_msg_generator_node" name="point_cloud_generator_node" output="screen">
+			<rosparam command="load" file="$(find robot_pick_and_place)/config/ur5/cylinder_cloud_descriptions.yaml"/>
+		</node>-->
 	</group>
 
   <!-- rviz -->
