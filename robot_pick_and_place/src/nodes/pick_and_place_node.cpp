@@ -17,7 +17,7 @@ int main(int argc,char** argv)
 
   if(application.init())
   {
-	  application.run_test();
+	  application.run();
   }
 
   return 0;

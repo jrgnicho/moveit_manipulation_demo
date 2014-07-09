@@ -37,11 +37,8 @@ public:
   std::string WRIST_LINK_NAME; // Link / frame name for the robot wrist tool-flange
   std::string ATTACHED_OBJECT_LINK_NAME; // attached object link in robot
   std::string WORLD_FRAME_ID;  // Frame name for the fixed world reference frame
-  std::string AR_TAG_FRAME_ID;    // Frame name for the "AR Tag" mounted to the target box
   std::string HOME_POSE_NAME;  // Named pose for robot Home position (set in SRDF)
   std::string WAIT_POSE_NAME;  // Named pose for robot WAIT position (set in SRDF)
-  tf::Vector3 BOX_SIZE;        // Size of the target box
-  tf::Transform BOX_PLACE_TF;  // Transform from the WORLD frame to the PLACE location
   std::vector<std::string> TOUCH_LINKS; // List of links that the attached payload is allow to be in contact with
   double RETREAT_DISTANCE;     // Distance to back away from pick/place pose after grasp/release
   double APPROACH_DISTANCE;    // Distance to stand off from pick/place pose before grasp/release
@@ -50,15 +47,11 @@ public:
   std::string GRASP_ACTION_NAME;  // Action name used to control suction gripper
   std::string MARKER_TOPIC; // Topic for publishing visualization of attached object.
   std::string PLANNING_SCENE_TOPIC; // Topic for publishing the planning scene
-  std::string TARGET_RECOGNITION_SERVICE; // service for requesting box pick pose
   std::string GRASP_POSES_SERVICE; // service for grasp pose
   std::string IK_SERVICE; // service for requesting ik
   std::string MOTION_PLAN_SERVICE; // service for requesting moveit for a motion plan
 
   // =============================== Messages and variables ===============================
-  visualization_msgs::Marker MARKER_MESSAGE; // visual representation of target object
-  moveit_msgs::CollisionObject ATTACHED_OBJECT; // attached object message
-  geometry_msgs::Pose TCP_TO_BOX_POSE;
   geometry_msgs::Pose TCP_TO_TARGET_POSE;
   geometry_msgs::Pose WORLD_TO_PLACE_POSE;
 
@@ -68,7 +61,6 @@ public:
     TCP_LINK_NAME   = "tcp_frame";
     MARKER_TOPIC = "pick_and_place_marker";
     PLANNING_SCENE_TOPIC = "planning_scene";
-    TARGET_RECOGNITION_SERVICE = "target_recognition";
     GRASP_POSES_SERVICE = "grasp_poses";
     IK_SERVICE = "compute_ik";
     MOTION_PLAN_SERVICE = "plan_kinematic_path";
@@ -77,10 +69,7 @@ public:
     WORLD_FRAME_ID  = "world_frame";
     HOME_POSE_NAME  = "home";
     WAIT_POSE_NAME  = "wait";
-    AR_TAG_FRAME_ID    = "ar_frame";
     GRASP_ACTION_NAME = "grasp_execution_action";
-    BOX_SIZE        = tf::Vector3(0.1f, 0.1f, 0.1f);
-    BOX_PLACE_TF    = tf::Transform(tf::Quaternion::getIdentity(), tf::Vector3(-0.8f,-0.2f,BOX_SIZE.getZ()));
     TOUCH_LINKS = std::vector<std::string>();
     RETREAT_DISTANCE  = 0.05f;
     APPROACH_DISTANCE = 0.05f;

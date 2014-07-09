@@ -158,22 +158,12 @@ bool PickAndPlaceConfig::init()
       && nh.getParam("world_frame_id",WORLD_FRAME_ID)
       && nh.getParam("home_pose_name",HOME_POSE_NAME)
       && nh.getParam("wait_pose_name",WAIT_POSE_NAME)
-      && nh.getParam("ar_frame_id",AR_TAG_FRAME_ID)
-      && nh.getParam("box_width",w)
-      && nh.getParam("box_length",l)
-      && nh.getParam("box_height",h)
-      && nh.getParam("box_place_x",x)
-      && nh.getParam("box_place_y",y)
-      && nh.getParam("box_place_z",z)
       && nh.getParam("touch_links",list)
       && nh.getParam("retreat_distance",RETREAT_DISTANCE)
       && nh.getParam("approach_distance",APPROACH_DISTANCE)
       && nh.getParam("tcp_to_target_pose",tcp_to_target)
       && nh.getParam("world_to_place_pose",world_to_place))
   {
-    BOX_SIZE = Vector3(l,w,h);
-    BOX_PLACE_TF.setOrigin(Vector3(x,y,z));
-    BOX_PLACE_TF.setRotation(tf::Quaternion::getIdentity());
 
     // parsing touch links list
     for(int32_t i =0 ; i < list.size();i++)
@@ -188,42 +178,7 @@ bool PickAndPlaceConfig::init()
     	}
     }
 
-    // building geometric primitive for target
-    shape_msgs::SolidPrimitive shape;
-    shape.type = shape_msgs::SolidPrimitive::BOX;
-    shape.dimensions.resize(3);
-    shape.dimensions[0] = BOX_SIZE.getX();
-    shape.dimensions[1] = BOX_SIZE.getY();
-    shape.dimensions[2] = BOX_SIZE.getZ();
-
-    // setting pose of object relative to tcp
-    tf::poseTFToMsg(tf::Transform::getIdentity(),TCP_TO_BOX_POSE);
-    TCP_TO_BOX_POSE.position.x = 0;
-    TCP_TO_BOX_POSE.position.y = 0;
-    TCP_TO_BOX_POSE.position.z = 0.5f* BOX_SIZE.getZ();
-
-    // creating visual object
-    MARKER_MESSAGE.header.frame_id = TCP_LINK_NAME;
-    MARKER_MESSAGE.type = visualization_msgs::Marker::CUBE;
-    MARKER_MESSAGE.pose = TCP_TO_BOX_POSE;
-    MARKER_MESSAGE.id = 0;
-    MARKER_MESSAGE.color.r = 0;
-    MARKER_MESSAGE.color.g = 0;
-    MARKER_MESSAGE.color.b = 1;
-    MARKER_MESSAGE.color.a = 0.5f;
-    MARKER_MESSAGE.lifetime = ros::Duration(100); // persists forever
-    MARKER_MESSAGE.frame_locked = true;
-    MARKER_MESSAGE.scale.x = shape.dimensions[0];
-    MARKER_MESSAGE.scale.y = shape.dimensions[1];
-    MARKER_MESSAGE.scale.z = shape.dimensions[2];
-
-    // create attached object
-    ATTACHED_OBJECT.header.frame_id = TCP_LINK_NAME;
-    ATTACHED_OBJECT.id=ATTACHED_OBJECT_LINK_NAME;
-    ATTACHED_OBJECT.primitives.push_back(shape);
-    ATTACHED_OBJECT.primitive_poses.push_back(TCP_TO_BOX_POSE);
-
-    // load tcp to target pose
+    // load poses
     if(parse_pose_parameter(tcp_to_target,TCP_TO_TARGET_POSE) && parse_pose_parameter(world_to_place,WORLD_TO_PLACE_POSE))
     {
     	ROS_INFO_STREAM("Pose parameters parsed correctly");

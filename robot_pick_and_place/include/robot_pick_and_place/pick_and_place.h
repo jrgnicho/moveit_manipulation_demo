@@ -42,8 +42,6 @@ namespace robot_pick_and_place
 
 		void run();
 
-		void run_test();
-
 	protected:
 
 		bool load_parameters();
@@ -52,39 +50,16 @@ namespace robot_pick_and_place
 
 		void set_gripper(bool do_grasp);
 
-		void set_attached_object(bool attach,
-				const geometry_msgs::Pose &pose,moveit_msgs::RobotState &robot_state);
-
-		void reset_world(bool refresh_octomap = true);
-
-		geometry_msgs::Pose detect_box_pick();
-
-		geometry_msgs::Pose detect_target_poses();
-
-		std::vector<geometry_msgs::Pose> create_pick_moves(geometry_msgs::Pose &box_pose);
-
-		std::vector<geometry_msgs::Pose> create_place_moves();
-
-		void pickup_box(std::vector<geometry_msgs::Pose>& pick_poses,const geometry_msgs::Pose& box_pose);
-
-		void place_box(std::vector<geometry_msgs::Pose>& place_poses,const geometry_msgs::Pose& box_pose);
-
 
 		bool create_motion_plan(const geometry_msgs::Pose &pose_target,
 				const moveit_msgs::RobotState &start_robot_state,move_group_interface::MoveGroup::Plan &plan);
 
-		void show_box(bool show=true)
-		{
-			ROS_WARN_STREAM("Showing marker from deprecated method");
-			// updating marker action
-			cfg.MARKER_MESSAGE.action =
-					show ? visualization_msgs::Marker::ADD : visualization_msgs::Marker::DELETE;
+		bool create_motion_plan(const moveit_msgs::RobotState &start_state,
+				const moveit_msgs::RobotState &end_state,move_group_interface::MoveGroup::Plan& plan);
 
-			// publish messages
-			marker_publisher.publish(cfg.MARKER_MESSAGE);
-		}
+		void show_target_at_pick(bool show);
 
-		void show_target_on_world(bool show);
+		void show_target_at_place(bool show);
 
 		void show_target_attached(bool show);
 
@@ -92,16 +67,11 @@ namespace robot_pick_and_place
 
 		bool update_planning_scene();
 
-		bool evaluate_poses(std::vector<geometry_msgs::Pose>& tcp_poses,RobotStateMsgArray &robot_states);
-
-
-		// new methods
-
 		bool get_robot_states_at_pick(RobotStateMsgArray& rs);
 
 		bool get_robot_states_at_place(RobotStateMsgArray& rs);
 
-		bool solve_ik(const geometry_msgs::PoseArray& tcp_poses,RobotStateMsgArray& rs);
+		bool solve_ik(const geometry_msgs::PoseArray& tcp_poses,RobotStateMsgArray& rs,int attempts = 10, double duration=0.1f);
 
 		bool validate_states(const RobotStateMsgArray& rs);
 
@@ -118,9 +88,6 @@ namespace robot_pick_and_place
 
 		bool attach_object(bool attach,const moveit_msgs::AttachedCollisionObject &att,moveit_msgs::RobotState &rs);
 
-		bool create_motion_plan(const moveit_msgs::RobotState &start_state,
-				const moveit_msgs::RobotState &end_state,move_group_interface::MoveGroup::Plan& plan);
-
 		bool plan_all_motions();
 
 		geometry_msgs::PoseArray create_poses_at_pick(const tf::Transform &world_to_tcp_tf);
@@ -136,7 +103,6 @@ namespace robot_pick_and_place
 		// ros comm
 		ros::Publisher marker_publisher;
 		ros::Publisher planning_scene_publisher;
-		ros::ServiceClient target_recognition_client;
 		ros::ServiceClient planning_scene_client;
 		ros::ServiceClient grasp_pose_client;
 		ros::ServiceClient ik_client;
@@ -148,7 +114,6 @@ namespace robot_pick_and_place
 		robot_model_loader::RobotModelLoaderPtr robot_model_loader_ptr;
 		moveit::core::RobotStatePtr kinematic_state_ptr;
 		moveit::core::RobotModelPtr kinematic_model_ptr;
-		planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_ptr_;
 		planning_scene::PlanningScenePtr planning_scene_ptr;
 
 		// motion planning
@@ -159,6 +124,9 @@ namespace robot_pick_and_place
 		// planning support
 		moveit_msgs::CollisionObject target_obj_on_world_;
 		moveit_msgs::AttachedCollisionObject target_obj_attached_;
+
+		// visualization
+		visualization_msgs::Marker target_marker_;
 
 
 		// tf
