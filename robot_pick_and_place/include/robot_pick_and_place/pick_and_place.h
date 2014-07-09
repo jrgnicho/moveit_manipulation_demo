@@ -42,6 +42,8 @@ namespace robot_pick_and_place
 
 		void run();
 
+		void run_test();
+
 	protected:
 
 		bool load_parameters();
@@ -73,6 +75,7 @@ namespace robot_pick_and_place
 
 		void show_box(bool show=true)
 		{
+			ROS_WARN_STREAM("Showing marker from deprecated method");
 			// updating marker action
 			cfg.MARKER_MESSAGE.action =
 					show ? visualization_msgs::Marker::ADD : visualization_msgs::Marker::DELETE;
@@ -81,15 +84,48 @@ namespace robot_pick_and_place
 			marker_publisher.publish(cfg.MARKER_MESSAGE);
 		}
 
+		void show_target_on_world(bool show);
+
+		void show_target_attached(bool show);
+
 		void scene_update_callback(planning_scene_monitor::PlanningSceneMonitor::SceneUpdateType t);
 
 		bool update_planning_scene();
 
-		bool evaluate_poses(std::vector<geometry_msgs::Pose>& tcp_poses);
+		bool evaluate_poses(std::vector<geometry_msgs::Pose>& tcp_poses,RobotStateMsgArray &robot_states);
 
-		bool create_pick_motion_plans(const geometry_msgs::PoseArray &tcp_poses,MotionPlanArray& mp);
 
-		bool create_place_motion_plans(const geometry_msgs::PoseArray &tcp_poses,MotionPlanArray& mp);
+		// new methods
+
+		bool get_robot_states_at_pick(RobotStateMsgArray& rs);
+
+		bool get_robot_states_at_place(RobotStateMsgArray& rs);
+
+		bool solve_ik(const geometry_msgs::PoseArray& tcp_poses,RobotStateMsgArray& rs);
+
+		bool validate_states(const RobotStateMsgArray& rs);
+
+		bool create_pick_motion_plans(const moveit_msgs::RobotState &start_state,
+				const RobotStateMsgArray& pick_states,
+				MotionPlanArray& mp);
+
+		bool create_place_motion_plans(const moveit_msgs::RobotState &start_state,
+				const RobotStateMsgArray& place_states,MotionPlanArray& mp);
+
+		bool execute_pick_motion_plans(const MotionPlanArray& mp);
+
+		bool execute_place_motion_plans(const MotionPlanArray& mp);
+
+		bool attach_object(bool attach,const moveit_msgs::AttachedCollisionObject &att,moveit_msgs::RobotState &rs);
+
+		bool create_motion_plan(const moveit_msgs::RobotState &start_state,
+				const moveit_msgs::RobotState &end_state,move_group_interface::MoveGroup::Plan& plan);
+
+		bool plan_all_motions();
+
+		geometry_msgs::PoseArray create_poses_at_pick(const tf::Transform &world_to_tcp_tf);
+
+		geometry_msgs::PoseArray create_poses_at_place(const tf::Transform &world_to_tcp_tf);
 
 
 	protected:
@@ -109,6 +145,7 @@ namespace robot_pick_and_place
 
 		// moveit
 		MoveGroupPtr move_group_ptr;
+		robot_model_loader::RobotModelLoaderPtr robot_model_loader_ptr;
 		moveit::core::RobotStatePtr kinematic_state_ptr;
 		moveit::core::RobotModelPtr kinematic_model_ptr;
 		planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_ptr_;
@@ -117,6 +154,7 @@ namespace robot_pick_and_place
 		// motion planning
 		MotionPlanArray pick_motion_plans_;
 		MotionPlanArray place_motion_plans_;
+		move_group_interface::MoveGroup::Plan home_motion_plan_;
 
 		// planning support
 		moveit_msgs::CollisionObject target_obj_on_world_;
