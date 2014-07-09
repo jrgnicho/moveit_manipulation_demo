@@ -13,6 +13,8 @@ planner_configs:
     type: geometric::RRT
   RRTConnectkConfigDefault:
     type: geometric::RRTConnect
+    range: 0.1
+    goal_bias: 50.0
   RRTstarkConfigDefault:
     type: geometric::RRTstar
   TRRTkConfigDefault:
@@ -35,4 +37,4 @@ manipulator:
     - PRMkConfigDefault
     - PRMstarkConfigDefault
   projection_evaluator: joints(shoulder_pan_joint,shoulder_lift_joint)
-  longest_valid_segment_fraction: 0.05
+  longest_valid_segment_fraction: 0.01
