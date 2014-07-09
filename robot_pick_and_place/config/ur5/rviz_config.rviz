@@ -9,8 +9,6 @@ Panels:
         - /TF1/Frames1
         - /TF1/Tree1
         - /RobotModel1
-        - /RobotModel1/Links1
-        - /PointCloud21
         - /Marker1/Namespaces1
         - /PlanningScene1/Scene Geometry1
         - /PlanningScene1/Scene Robot1
@@ -387,13 +385,13 @@ Visualization Manager:
         Show Robot Visual: false
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /handle_markers
       Name: MarkerArray
       Namespaces:
-        handles: true
+        {}
       Queue Size: 1
-      Value: true
+      Value: false
     - Class: rviz/Axes
       Enabled: true
       Length: 0.2
@@ -406,14 +404,12 @@ Visualization Manager:
       Marker Topic: /move_group/display_contacts
       Name: MarkerArray
       Namespaces:
-        <octomap>=attached_object_link: true
+        <octomap>=forearm_link: true
         <octomap>=gripper_body: true
+        <octomap>=wrist_1_link: true
         <octomap>=wrist_2_link: true
-        attached_object_link=base_padding: true
-        attached_object_link=worktable: true
+        <octomap>=wrist_3_link: true
         collision_object=gripper_body: true
-        collision_object=tcp_frame: true
-        worktable=attached_object_link: true
       Queue Size: 100
       Value: true
     - Class: rviz/Axes
@@ -454,10 +450,10 @@ Visualization Manager:
         Z: 0.119461
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.379797
+      Pitch: 0.424797
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.45356
+      Yaw: 2.90856
     Saved: ~
 Window Geometry:
   Displays:

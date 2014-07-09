@@ -5,8 +5,8 @@
 	<node name="grasp_poses_service" pkg="handle_detector" type="handle_detector_grasp_poses_service" output="screen">
 		<!-- affordance search parameters -->
     <param name="file" value="$(find robot_pick_and_place)/pcd/cylinders.pcd" />
-		<param name="target_radius" value="0.02" />
-		<param name="target_radius_error" value="0.02" />
+		<param name="target_radius" value="0.03" />
+		<param name="target_radius_error" value="0.03" />
 		<param name="affordance_gap" value="0.01" />
 		<param name="sample_size" value="200" />		
 		<param name="use_clearance_filter" value="true" />
