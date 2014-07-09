@@ -9,6 +9,7 @@
 #include <moveit/kinematic_constraints/utils.h>
 #include <tf/transform_listener.h>
 #include <boost/assign/std/vector.hpp>
+#include <boost/assign/list_of.hpp>
 #include <iostream>
 #include <ros/ros.h>
 
@@ -95,11 +96,60 @@ std::ostream& operator<<(std::ostream& os, const geometry_msgs::Point pt)
   return os << "[" << pt.x << ", " << pt.y << ", " << pt.z << "]";
 }
 
+bool parse_pose_parameter(XmlRpc::XmlRpcValue pose_param,tf::Transform &t)
+{
+	std::map<std::string,double> fields_map =
+			boost::assign::map_list_of("x",0.0d)
+			("y",0.0d)
+			("z",0.0d)
+			("rx",0.0d)
+			("ry",0.0d)
+			("rz",0.0d);
+
+	// parsing fields
+	std::map<std::string,double>::iterator i;
+	bool succeeded = true;
+	for(i= fields_map.begin();i != fields_map.end();i++)
+	{
+		if(pose_param.hasMember(i->first) && pose_param[i->first].getType() == XmlRpc::XmlRpcValue::TypeDouble)
+		{
+			fields_map[i->first] = static_cast<double>(pose_param[i->first]);
+		}
+		else
+		{
+			succeeded = false;
+			break;
+		}
+	}
+
+	tf::Vector3 pos = tf::Vector3(fields_map["x"],fields_map["y"],fields_map["z"]);
+	tf::Quaternion q;
+	q.setRPY(fields_map["rx"],fields_map["ry"],fields_map["rz"]); // fixed axis
+	t.setOrigin(pos);
+	t.setRotation(q);
+
+	return succeeded;
+}
+
+bool parse_pose_parameter(XmlRpc::XmlRpcValue pose_param,geometry_msgs::Pose &pose)
+{
+	tf::Transform t;
+	if(parse_pose_parameter(pose_param,t))
+	{
+		tf::poseTFToMsg(t,pose);
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 bool PickAndPlaceConfig::init()
 {
   ros::NodeHandle nh("~");
   double w, l, h, x, y, z;
-  XmlRpc::XmlRpcValue list;
+  XmlRpc::XmlRpcValue list,tcp_to_target,world_to_place;
 
   if(nh.getParam("arm_group_name",ARM_GROUP_NAME)
       && nh.getParam("tcp_link_name",TCP_LINK_NAME)
@@ -117,10 +167,13 @@ bool PickAndPlaceConfig::init()
       && nh.getParam("box_place_z",z)
       && nh.getParam("touch_links",list)
       && nh.getParam("retreat_distance",RETREAT_DISTANCE)
-      && nh.getParam("approach_distance",APPROACH_DISTANCE))
+      && nh.getParam("approach_distance",APPROACH_DISTANCE)
+      && nh.getParam("tcp_to_target_pose",tcp_to_target)
+      && nh.getParam("world_to_place_pose",world_to_place))
   {
     BOX_SIZE = Vector3(l,w,h);
     BOX_PLACE_TF.setOrigin(Vector3(x,y,z));
+    BOX_PLACE_TF.setRotation(tf::Quaternion::getIdentity());
 
     // parsing touch links list
     for(int32_t i =0 ; i < list.size();i++)
@@ -169,6 +222,18 @@ bool PickAndPlaceConfig::init()
     ATTACHED_OBJECT.id=ATTACHED_OBJECT_LINK_NAME;
     ATTACHED_OBJECT.primitives.push_back(shape);
     ATTACHED_OBJECT.primitive_poses.push_back(TCP_TO_BOX_POSE);
+
+    // load tcp to target pose
+    if(parse_pose_parameter(tcp_to_target,TCP_TO_TARGET_POSE) && parse_pose_parameter(world_to_place,WORLD_TO_PLACE_POSE))
+    {
+    	ROS_INFO_STREAM("Pose parameters parsed correctly");
+    }
+    else
+    {
+    	ROS_ERROR_STREAM("Error parsing pose parameters");
+    	return false;
+    }
+
 
     return true;
   }

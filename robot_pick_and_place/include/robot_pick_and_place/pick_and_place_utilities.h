@@ -7,6 +7,7 @@
 #include <moveit_msgs/Constraints.h>
 #include <visualization_msgs/Marker.h>
 #include <robot_pick_and_place/GetTargetPose.h>
+#include <XmlRpc.h>
 
 namespace robot_pick_and_place{
 
@@ -22,6 +23,9 @@ std::ostream& operator<<(std::ostream& os, const geometry_msgs::Point pt);
 moveit_msgs::Constraints create_path_orientation_constraints(const geometry_msgs::Pose &goal_pose,
 		float x_tolerance,float y_tolerance,float z_tolerance,std::string link_name);
 
+bool parse_pose_parameter(XmlRpc::XmlRpcValue pose_param,geometry_msgs::Pose &pose);
+
+bool parse_pose_parameter(XmlRpc::XmlRpcValue pose_param,tf::Transform &t);
 
 class PickAndPlaceConfig
 {
@@ -55,6 +59,8 @@ public:
   visualization_msgs::Marker MARKER_MESSAGE; // visual representation of target object
   moveit_msgs::CollisionObject ATTACHED_OBJECT; // attached object message
   geometry_msgs::Pose TCP_TO_BOX_POSE;
+  geometry_msgs::Pose TCP_TO_TARGET_POSE;
+  geometry_msgs::Pose WORLD_TO_PLACE_POSE;
 
   PickAndPlaceConfig()
   {
