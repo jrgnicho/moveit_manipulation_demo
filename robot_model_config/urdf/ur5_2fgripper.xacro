@@ -99,19 +99,9 @@
 			</collision>
 		</link>
 
-		<!--<link name="wrist_3_padding">
-			<collision>
-				<geometry>
-					<cylinder radius="0.10" length="0.12"/>
-				</geometry>
-				<material name="blue_transparent"/>
-			</collision>
-		</link>-->
-
-
 	<!-- sensor components -->
 		<xacro:sensor_definitions prefix="${arm_prefix}" parent_link="ur5_stand" 
-			x_val="-0.981" y_val="0.190" z_val="1.015" pitch="1.145" yaw="0.035" roll="0.019" /> 
+			x_val="-1.20" y_val="0.190" z_val="1.015" pitch="1.145" yaw="0.035" roll="0.019" /> 
 
 
 	<!-- joints -->
@@ -121,11 +111,6 @@
 			<origin xyz="-0.238 0 ${robot_stand_height * 0.5}"/>
 		</joint>
 
-		<!--<joint name="wrist_3_link_to_wrist_3_padding" type="fixed">
-			<parent link="wrist_3_link"/>
-			<child link="wrist_3_padding"/>
-			<origin xyz="0 0.09 0" rpy="1.57 0 0"/>
-		</joint>-->
 
 		<joint name="world_to_base_padding" type="fixed">
 			<parent link="world_frame"/>
@@ -136,7 +121,7 @@
 		<joint name="stand_to_base" type="fixed">
 			<parent link="ur5_stand"/>
 			<child link="${arm_prefix}base_link"/>
-			<origin xyz="0 0 ${robot_stand_height * 0.5}" rpy="0 0 2.355"/>
+			<origin xyz="0 0 ${robot_stand_height * 0.5}" rpy="0 0 3.1416"/>
 		</joint>
 
 		<joint name="world_to_table" type="fixed">
@@ -148,6 +133,6 @@
 		<joint name="${arm_prefix}to_gripper" type="fixed">
 			<parent link="${arm_prefix}ee_link"/>
 			<child link="${arm_prefix}gripper_frame"/>
-			<origin xyz="0 0 0" rpy="-1.57 0 -1.57"/> <!-- 0 1.57 0 -->
+			<origin xyz="0 0 0" rpy="0 1.57 0"/> <!-- 0 1.57 0 -->
 		</joint>
 </robot>
