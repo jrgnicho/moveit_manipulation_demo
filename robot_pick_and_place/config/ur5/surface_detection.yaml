@@ -7,9 +7,9 @@ surface_detection:
   stout_stdev_threshold: 1.0
 
   rg_min_cluster_size: 100
-  rg_max_cluster_size: 10000
+  rg_max_cluster_size: 20000
   rg_neighbors: 40
-  rg_smoothness_threshold: 1.60
+  rg_smoothness_threshold: 0.5
   rg_curvature_threshold: 1.0
 
   pa_enabled: false
