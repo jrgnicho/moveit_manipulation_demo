@@ -182,6 +182,10 @@ bool PickAndPlace::plan_all_motions()
 		return false;
 	}
 
+	// removing obstacles from planning scene
+	add_obstacles_to_planning_scene(obstacles_,false);
+	publish_planning_scene();
+
 	return true;
 }
 
@@ -268,7 +272,7 @@ bool PickAndPlace::get_robot_states_at_pick(RobotStateMsgArray& rs)
 	// grasp candidates request
 	GraspPoseCandidates gp;
 	gp.request.candidates_per_pose = 10;
-	gp.request.gripper_workrange=0.087f;
+	gp.request.gripper_workrange=cfg.GRIPPER_WORKRANGE;
 	gp.request.planning_frame_id = cfg.WORLD_FRAME_ID;
 
 	// collision objects
@@ -287,10 +291,21 @@ bool PickAndPlace::get_robot_states_at_pick(RobotStateMsgArray& rs)
 		// update scene
 		update_planning_scene();
 
+		// saving all graspable objects detected for collision avoidance
+		obstacles_ = gp.response.candidate_collision_objects;
+
 
 		for(int i = 0; i <gp.response.candidate_grasp_poses.size();i++)
 		{
 			std::vector<geometry_msgs::Pose> &poses = gp.response.candidate_grasp_poses[i].poses;
+
+			// adding obstacles to planning scene not including target
+			CollisionObjectArray temp_obstacles = obstacles_;
+			temp_obstacles.erase(temp_obstacles.begin() + i);
+			add_obstacles_to_planning_scene(obstacles_,false);
+			add_obstacles_to_planning_scene(temp_obstacles,true);
+
+			//marker_publisher.publish(gp.response.candidate_objects.markers[i]);
 
 			ROS_INFO_STREAM("Evaluating "<<poses.size()<<" candidate poses");
 
@@ -307,11 +322,12 @@ bool PickAndPlace::get_robot_states_at_pick(RobotStateMsgArray& rs)
 				// creating pick poses for tcp
 				tcp_poses = create_poses_at_pick(world_to_tcp_tf);
 				rs.clear();
+
 				if(solve_ik(tcp_poses,rs))
 				{
 					// attach and evaluate
-					ROS_INFO_STREAM("Ik solution found "<<rs.size() <<" poses, collision object count "
-							<<gp.response.candidate_collision_objects.size());
+					ROS_INFO_STREAM("Ik solution found "<<rs.size() <<" poses with pick at:\n"
+							<<tcp_poses.poses[1]);
 
 					att.object = gp.response.candidate_collision_objects[i];
 					attach_object(true,att,rs[2]);
@@ -326,14 +342,16 @@ bool PickAndPlace::get_robot_states_at_pick(RobotStateMsgArray& rs)
 				{
 					// saving results
 					target_obj_on_world_= gp.response.candidate_collision_objects[i];
-					target_obj_on_world_.id = "collision_object";
+					//target_obj_on_world_.id = "collision_object";
 					target_obj_attached_.object = gp.response.candidate_collision_objects[i];
 					target_marker_= gp.response.candidate_objects.markers[i];
+					obstacles_.erase(obstacles_.begin()+i); // removing target from obstacles
 					found_valid_poses = true;
 
-					// show marker
 
-					ROS_INFO_STREAM("Found valid tcp grasp poses at index "<< j <<" with grasp pose at:\n"<<world_to_tcp_pose);
+
+					//ROS_INFO_STREAM("Found valid tcp grasp poses at index "<< j <<" with grasp pose at:\n"<<world_to_tcp_pose);
+					ROS_INFO_STREAM("Found valid tcp grasp poses at index "<< j );
 					break;
 				}
 
@@ -374,6 +392,9 @@ bool PickAndPlace::get_robot_states_at_place(RobotStateMsgArray& rs)
 	tcp_place_poses = create_poses_at_place(world_to_tcp_tf);
 
 	//ROS_INFO_STREAM("Planning for place pose:\n"<<tcp_place_poses);
+
+	// adding obstacles to planning scene
+	add_obstacles_to_planning_scene(obstacles_,true);
 
 	rs.clear();
 	if(solve_ik(tcp_place_poses,rs,20,0.5f))
@@ -568,14 +589,10 @@ bool PickAndPlace::create_pick_motion_plans(
 		return false;
 	}
 
-	// adding collision object to planning scene
-	target_obj_on_world_.operation = moveit_msgs::CollisionObject::ADD;
-	//target_obj_on_world_.id = cfg.ATTACHED_OBJECT_LINK_NAME;
-	planning_scene_ptr->processCollisionObjectMsg(target_obj_on_world_);
-	planning_scene_ptr->getPlanningSceneMsg(ps);
-	ps.is_diff = false;
-	planning_scene_publisher.publish(ps);
-	ros::Duration(1.0f).sleep();
+	// adding all obstacles to planning scene
+	add_obstacles_to_planning_scene(obstacles_,true);
+	add_obstacle_to_planning_scene(target_obj_on_world_,true);
+	publish_planning_scene();
 
 	// planning pick move 1
 	move_group_interface::MoveGroup::Plan plan;
@@ -591,13 +608,8 @@ bool PickAndPlace::create_pick_motion_plans(
 	}
 
 	// removing object from planning scene
-	ps = moveit_msgs::PlanningScene();
-	target_obj_on_world_.operation = moveit_msgs::CollisionObject::REMOVE;
-	planning_scene_ptr->processCollisionObjectMsg(target_obj_on_world_);
-	planning_scene_ptr->getPlanningSceneMsg(ps);
-	ps.is_diff = false;
-	planning_scene_publisher.publish(ps);
-	ros::Duration(1.0f).sleep();
+	add_obstacle_to_planning_scene(target_obj_on_world_,false);
+	publish_planning_scene();
 
 	// planning pick move 2
 	if(create_motion_plan(pick_states[0],pick_states[1],plan))
@@ -610,7 +622,6 @@ bool PickAndPlace::create_pick_motion_plans(
 		ROS_ERROR_STREAM("Failed to create pick move 2");
 		return false;
 	}
-
 
 	// planning pick move 3
 	if(create_motion_plan(pick_states[1],pick_states[2],plan))
@@ -759,6 +770,7 @@ bool PickAndPlace::attach_object(bool attach,const moveit_msgs::AttachedCollisio
 	rs.attached_collision_objects.push_back(att);
 	moveit_msgs::AttachedCollisionObject &rs_attached = rs.attached_collision_objects[0];
 
+
 	//tf::poseTFToMsg(tf::Transform::getIdentity(),rs_attached.object.primitive_poses[0]);
 	rs_attached.object.primitive_poses[0] = cfg.TCP_TO_TARGET_POSE;
 	rs_attached.object.id = cfg.ATTACHED_OBJECT_LINK_NAME;
@@ -771,6 +783,45 @@ bool PickAndPlace::attach_object(bool attach,const moveit_msgs::AttachedCollisio
 
 	rs.is_diff = true;
 	return true;
+}
+
+void PickAndPlace::add_obstacles_to_planning_scene(const CollisionObjectArray &obstacles,bool add)
+{
+	if(obstacles.empty())
+	{
+		return;
+	}
+
+	// adding collision objects to planning scene
+	for(CollisionObjectArray::const_iterator i = obstacles.begin();i != obstacles.end();i++)
+	{
+		moveit_msgs::CollisionObject obj = *i;
+		obj.operation = add ? moveit_msgs::CollisionObject::ADD : moveit_msgs::CollisionObject::REMOVE;
+		if(!planning_scene_ptr->processCollisionObjectMsg(obj))
+		{
+			ROS_WARN_STREAM("Collision object "<<obj.id<<", could not be processed");
+		}
+		else
+		{
+			ROS_INFO_STREAM("Collision object "<<obj.id<<(add?" Added" :" Removed"));
+		}
+	}
+}
+
+void PickAndPlace::publish_planning_scene()
+{
+	moveit_msgs::PlanningScene ps;
+	planning_scene_ptr->getPlanningSceneMsg(ps);
+	ps.is_diff = false;
+	planning_scene_publisher.publish(ps);
+	ros::Duration(0.5f).sleep();
+}
+
+void PickAndPlace::add_obstacle_to_planning_scene(const moveit_msgs::CollisionObject &obj,bool add)
+{
+	CollisionObjectArray obstacles;
+	obstacles.push_back(obj);
+	add_obstacles_to_planning_scene(obstacles,add);
 }
 
 void PickAndPlace::set_gripper(bool do_grasp)
