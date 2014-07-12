@@ -27,7 +27,8 @@ typedef boost::shared_ptr<move_group_interface::MoveGroup> MoveGroupPtr;
 typedef boost::shared_ptr<tf::TransformListener> TransformListenerPtr;
 typedef std::vector<move_group_interface::MoveGroup::Plan> MotionPlanArray;
 typedef std::vector<moveit_msgs::RobotState> RobotStateMsgArray;
-
+typedef std::vector<moveit_msgs::CollisionObject> CollisionObjectArray;
+typedef std::vector<moveit_msgs::CollisionObject>::iterator CollisionObjectIterator;
 namespace robot_pick_and_place
 {
 	class PickAndPlace
@@ -94,6 +95,12 @@ namespace robot_pick_and_place
 
 		geometry_msgs::PoseArray create_poses_at_place(const tf::Transform &world_to_tcp_tf);
 
+		void add_obstacles_to_planning_scene(const CollisionObjectArray &obstacles,bool add);
+
+		void add_obstacle_to_planning_scene(const moveit_msgs::CollisionObject &obstacle,bool add);
+
+		void publish_planning_scene();
+
 
 	protected:
 
@@ -122,12 +129,12 @@ namespace robot_pick_and_place
 		move_group_interface::MoveGroup::Plan home_motion_plan_;
 
 		// planning support
+		CollisionObjectArray obstacles_;
 		moveit_msgs::CollisionObject target_obj_on_world_;
 		moveit_msgs::AttachedCollisionObject target_obj_attached_;
 
 		// visualization
 		visualization_msgs::Marker target_marker_;
-
 
 		// tf
 		TransformListenerPtr transform_listener_ptr;

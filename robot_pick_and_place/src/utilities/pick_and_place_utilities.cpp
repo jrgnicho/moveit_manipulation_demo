@@ -162,7 +162,8 @@ bool PickAndPlaceConfig::init()
       && nh.getParam("retreat_distance",RETREAT_DISTANCE)
       && nh.getParam("approach_distance",APPROACH_DISTANCE)
       && nh.getParam("tcp_to_target_pose",tcp_to_target)
-      && nh.getParam("world_to_place_pose",world_to_place))
+      && nh.getParam("world_to_place_pose",world_to_place)
+      && nh.getParam("gripper_workrange",GRIPPER_WORKRANGE))
   {
 
     // parsing touch links list

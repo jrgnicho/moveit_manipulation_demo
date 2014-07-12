@@ -42,6 +42,7 @@ public:
   std::vector<std::string> TOUCH_LINKS; // List of links that the attached payload is allow to be in contact with
   double RETREAT_DISTANCE;     // Distance to back away from pick/place pose after grasp/release
   double APPROACH_DISTANCE;    // Distance to stand off from pick/place pose before grasp/release
+  double GRIPPER_WORKRANGE;    // maximum allowed gripper workrange
 
   // =============================== Topic, services and action names ===============================
   std::string GRASP_ACTION_NAME;  // Action name used to control suction gripper
