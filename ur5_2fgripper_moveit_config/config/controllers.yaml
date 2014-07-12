@@ -1,7 +1,8 @@
-controller_manager_ns: pr2_controller_manager
+controller_manager_ns: moveit_simple_controller_manager
 controller_list:
   - name: ""
-    ns: joint_trajectory_action
+    action_ns: joint_trajectory_action
+    type: FollowJointTrajectory
     default: true
     joints:
       - elbow_joint
