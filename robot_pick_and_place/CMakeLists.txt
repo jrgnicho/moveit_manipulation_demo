@@ -74,28 +74,13 @@ add_executable(grasp_pose_service src/services/grasp_pose_service.cpp)
 add_dependencies(grasp_pose_service ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(grasp_pose_service ${catkin_LIBRARIES})
 
-add_executable(target_recognition_service src/services/target_recognition_service.cpp)
-add_dependencies(target_recognition_service ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(target_recognition_service ${catkin_LIBRARIES})
-
-add_executable(generate_cloud_node src/nodes/generate_point_cloud.cpp)
-add_dependencies(generate_cloud_node ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(generate_cloud_node ${catkin_LIBRARIES})
+#add_executable(target_recognition_service src/services/target_recognition_service.cpp)
+#add_dependencies(target_recognition_service ${PROJECT_NAME}_generate_messages_cpp)
+#target_link_libraries(target_recognition_service ${catkin_LIBRARIES})
 
 add_executable(pick_and_place_node 
 	src/nodes/pick_and_place_node.cpp
 	src/pick_and_place.cpp
-	#src/tasks/move_to_wait_position.cpp
-	#src/tasks/set_gripper.cpp
-	#src/tasks/reset_world.cpp
-	#src/tasks/set_attached_object.cpp
-	#src/tasks/detect_box_pick.cpp
-	#src/tasks/detect_target_pose.cpp
-	#src/tasks/create_pick_moves.cpp
-  #src/tasks/create_place_moves.cpp
-	#src/tasks/pickup_box.cpp
-	#src/tasks/place_box.cpp	
-	#src/tasks/create_motion_plan.cpp
 	src/utilities/pick_and_place_utilities.cpp)
 add_dependencies(pick_and_place_node ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(pick_and_place_node ${catkin_LIBRARIES})
