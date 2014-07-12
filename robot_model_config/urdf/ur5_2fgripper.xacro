@@ -71,7 +71,7 @@
 
 		<link name="world_frame"/>
 
-		<xacro:work_table_link name="${arm_prefix}worktable" l="1.0" w="1.0" h="0.5"/>
+		<!--<xacro:work_table_link name="${arm_prefix}worktable" l="1.0" w="1.0" h="0.5"/>-->
 
 		<link name="ur5_stand">
 			<visual>
@@ -121,14 +121,14 @@
 		<joint name="stand_to_base" type="fixed">
 			<parent link="ur5_stand"/>
 			<child link="${arm_prefix}base_link"/>
-			<origin xyz="0 0 ${robot_stand_height * 0.5}" rpy="0 0 3.1416"/>
+			<origin xyz="0 0 ${robot_stand_height * 0.5}" rpy="0 0 1.57"/>
 		</joint>
 
-		<joint name="world_to_table" type="fixed">
+		<!--<joint name="world_to_table" type="fixed">
 			<parent link="world_frame"/>
 			<child link="${arm_prefix}worktable"/>
 			<origin xyz="-1.02 0 0" rpy="0 0 0"/>
-		</joint>
+		</joint>-->
 		
 		<joint name="${arm_prefix}to_gripper" type="fixed">
 			<parent link="${arm_prefix}ee_link"/>
