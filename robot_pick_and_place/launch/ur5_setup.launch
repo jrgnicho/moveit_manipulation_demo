@@ -33,34 +33,27 @@
     <!-- sensor setup -->
     <include file="$(find sensor_config)/launch/ur5_sensor_setup.launch"/>
 
-    <!-- detection node -->
-    <include file="$(find robot_pick_and_place)/launch/ur5_target_recognition.launch"/>
-    
-    <!-- ar tag detection node -->	
-    <node name="ar_pose" pkg="ar_pose" type="ar_multi" respawn="false">
-      <remap from="/usb_cam/image_raw" to="/kinect/rgb/image_color"/>
-      <remap from="/usb_cam/camera_info" to="/kinect/rgb/camera_info"/>
-      <param name="marker_pattern_list" type="string" value="$(find ar_pose)/data/target_info"/>
-      <param name="threshold" type="int" value="100"/>
-    </node>
-	</group>
+    <!-- grasp planning node -->
+		<include file="$(find robot_pick_and_place)/launch/ur5_grasp_planning.launch"/> 
+
+  </group>
 
 	<!-- simulated sensor mode -->
 	<group if="$(arg sim_sensor)">
 		
-		<!-- static ar_tag frame publisher for simulation -->
-		<!--<node pkg="tf" type="static_transform_publisher" name="world_to_tag" args="-0.8 0.2 0.17 0.785 0 0 world_frame ar_tag 100"/>-->
-
-		<!-- detection node -->
-		<!--<include file="$(find robot_pick_and_place)/launch/ur5_target_recognition.launch"/>-->
+		<!-- grasp planning node -->
+		<include file="$(find robot_pick_and_place)/launch/ur5_grasp_planning.launch"/>
 
 		<!-- simulated sensor data -->
-		<!--<include file="$(find robot_pick_and_place)/launch/ur5_generate_test_cloud_obstacles.launch"/>-->
+		<include file="$(find robot_pick_and_place)/launch/ur5_publish_test_point_cloud.launch">
+			<arg name="use_pcd_file" value="true"/>
+		</include>
+
 	</group>
  
 
   <!-- rviz -->
-  <node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="false" 
+  <node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="false" required="true"
         args="-d $(find robot_pick_and_place)/config/ur5/rviz_config.rviz" output="screen" launch-prefix="nice">
     <rosparam command="load" file="$(find ur5_2fgripper_moveit_config)/config/kinematics.yaml"/>
   </node>

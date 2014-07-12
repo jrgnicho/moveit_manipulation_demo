@@ -25,10 +25,10 @@
 		<!-- workspace limits -->
 		<param name="max_range" value="1.2" />
 		<param name="workspace_min_x" value="-2.0" />
-		<param name="workspace_max_x" value="-0.4" />
+		<param name="workspace_max_x" value="-0.6" />
 		<param name="workspace_min_y" value="-0.4" />
 		<param name="workspace_max_y" value="0.4" />
-		<param name="workspace_min_z" value="0.02" />
+		<param name="workspace_min_z" value="-0.1" />
 		<param name="workspace_max_z" value="0.5" />
 		
 		<!-- number of threads to use -->

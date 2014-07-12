@@ -33,37 +33,22 @@
     <!-- sensor setup -->
     <include file="$(find sensor_config)/launch/ur5_sensor_setup.launch"/>
 
-    <!-- detection node -->
-    <include file="$(find robot_pick_and_place)/launch/ur5_target_recognition.launch"/>
-    
-    <!-- ar tag detection node -->	
-    <node name="ar_pose" pkg="ar_pose" type="ar_multi" respawn="false">
-      <remap from="/usb_cam/image_raw" to="/kinect/rgb/image_color"/>
-      <remap from="/usb_cam/camera_info" to="/kinect/rgb/camera_info"/>
-      <param name="marker_pattern_list" type="string" value="$(find ar_pose)/data/target_info"/>
-      <param name="threshold" type="int" value="100"/>
-    </node>
-	</group>
+    <!-- grasp planning node -->
+		<include file="$(find robot_pick_and_place)/launch/ur5_grasp_planning.launch"/> 
+
+  </group>
 
 	<!-- simulated sensor mode -->
 	<group if="$(arg sim_sensor)">
 		
-		<!-- grasp planning node
-		<include file="$(find robot_pick_and_place)/launch/ur5_grasp_planning.launch"/> -->
+		<!-- grasp planning node -->
+		<include file="$(find robot_pick_and_place)/launch/ur5_grasp_planning.launch"/>
 
 		<!-- simulated sensor data -->
-		<!--<include file="$(find robot_pick_and_place)/launch/ur5_generate_test_cloud_obstacles.launch"/>-->
+		<include file="$(find robot_pick_and_place)/launch/ur5_publish_test_point_cloud.launch">
+			<arg name="use_pcd_file" value="true"/>
+		</include>
 
-		<!-- point cloud publisher -->
-		<remap from="cloud_pcd" to="/kinect/depth_registered/points"/>
-		<node pkg="pcl_ros" name="point_cloud_publisher" type="pcd_to_pointcloud" args="$(find robot_pick_and_place)/pcd/cylinders05.pcd 0.1">
-			<param name="frame_id" value="/kinect_rgb_optical_frame"/>
-		</node>
-
-		<remap from="generated_cloud" to="/kinect/depth_registered/points"/>
-		<!--<node pkg="industrial_pcl_utilities" type="pcl_msg_generator_node" name="point_cloud_generator_node" output="screen">
-			<rosparam command="load" file="$(find robot_pick_and_place)/config/ur5/cylinder_cloud_descriptions.yaml"/>
-		</node>-->
 	</group>
 
   <!-- rviz -->
