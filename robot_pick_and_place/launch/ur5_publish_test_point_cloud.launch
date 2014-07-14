@@ -10,7 +10,7 @@
 
 		<!-- read pcd -->
 		<remap from="cloud_pcd" to="/kinect/depth_registered/points"/>
-		<node if="$(arg use_pcd_file)" pkg="pcl_ros" name="point_cloud_publisher" type="pcd_to_pointcloud" args="$(find robot_pick_and_place)/pcd/cylinders05.pcd 0.1">
+		<node if="$(arg use_pcd_file)" pkg="pcl_ros" name="point_cloud_publisher" type="pcd_to_pointcloud" args="$(find robot_pick_and_place)/pcd/capture0.pcd 0.1">
 			<param name="frame_id" value="/kinect_rgb_optical_frame"/>
 		</node>
 
