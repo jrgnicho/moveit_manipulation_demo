@@ -300,10 +300,8 @@ bool PickAndPlace::get_robot_states_at_pick(RobotStateMsgArray& rs)
 			std::vector<geometry_msgs::Pose> &poses = gp.response.candidate_grasp_poses[i].poses;
 
 			// adding obstacles to planning scene not including target
-			CollisionObjectArray temp_obstacles = obstacles_;
-			temp_obstacles.erase(temp_obstacles.begin() + i);
-			add_obstacles_to_planning_scene(obstacles_,false);
-			add_obstacles_to_planning_scene(temp_obstacles,true);
+			add_obstacles_to_planning_scene(obstacles_,true);
+			add_obstacle_to_planning_scene(obstacles_[i],false);
 
 			//marker_publisher.publish(gp.response.candidate_objects.markers[i]);
 
