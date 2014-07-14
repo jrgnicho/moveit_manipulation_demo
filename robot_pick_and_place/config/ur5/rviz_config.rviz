@@ -8,7 +8,7 @@ Panels:
         - /Status1
         - /TF1/Frames1
         - /TF1/Tree1
-        - /RobotModel1
+        - /PointCloud21
         - /Marker1/Namespaces1
         - /PlanningScene1/Scene Geometry1
         - /PlanningScene1/Scene Robot1
@@ -108,6 +108,11 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
+        gripper_spacer:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         kinect_frame:
           Alpha: 1
           Show Axes: false
@@ -160,11 +165,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        worktable:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         world_frame:
           Alpha: 1
           Show Axes: false
@@ -200,7 +200,7 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: Intensity
+      Color Transformer: RGB8
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
@@ -210,7 +210,7 @@ Visualization Manager:
       Min Intensity: 0
       Name: PointCloud2
       Position Transformer: XYZ
-      Queue Size: 10
+      Queue Size: 1
       Selectable: false
       Size (Pixels): 1
       Size (m): 0.01
@@ -304,6 +304,11 @@ Visualization Manager:
             Alpha: 1
             Show Axes: false
             Show Trail: false
+          gripper_spacer:
+            Alpha: 1
+            Show Axes: false
+            Show Trail: false
+            Value: true
           kinect_frame:
             Alpha: 1
             Show Axes: false
@@ -356,11 +361,6 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          worktable:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
           world_frame:
             Alpha: 1
             Show Axes: false
@@ -404,12 +404,7 @@ Visualization Manager:
       Marker Topic: /move_group/display_contacts
       Name: MarkerArray
       Namespaces:
-        <octomap>=forearm_link: true
-        <octomap>=gripper_body: true
-        <octomap>=wrist_1_link: true
-        <octomap>=wrist_2_link: true
-        <octomap>=wrist_3_link: true
-        collision_object=gripper_body: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Axes
@@ -423,7 +418,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Fixed Frame: world_frame
-    Frame Rate: 30
+    Frame Rate: 10
   Name: root
   Tools:
     - Class: rviz/Interact
@@ -450,10 +445,10 @@ Visualization Manager:
         Z: 0.119461
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.424797
+      Pitch: 0.639797
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.90856
+      Yaw: 3.96856
     Saved: ~
 Window Geometry:
   Displays:
@@ -471,5 +466,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1535
-  X: 218
+  X: 204
   Y: 24
