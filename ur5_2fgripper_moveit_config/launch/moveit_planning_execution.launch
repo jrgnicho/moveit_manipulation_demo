@@ -15,7 +15,7 @@
   <!-- run the robot simulator and action interface nodes -->
   <group if="$(arg sim)">
     <include file="$(find industrial_robot_simulator)/launch/robot_interface_simulator.launch" />
-    <rosparam param="initial_joint_state">[1.158, -0.953, 1.50, -1.912, -1.765, 0.0]</rosparam>
+    <rosparam param="initial_joint_state">[1.445, -1.3856, -0.1726, -1.942, -1.4939, 1.5869]</rosparam>
   </group>
 
   <!-- run the "real robot" interface nodes -->
@@ -35,6 +35,15 @@
 			<param name="buffer_size" value="120.0"/>
 		</node>
   </group>
+
+	<!-- moveit -->
+  <include file="$(find ur5_2fgripper_moveit_config)/launch/move_group.launch">
+    <arg name="publish_monitored_planning_scene" value="true" />
+  </include>
+
+  <rosparam command="load" file="$(find ur5_2fgripper_moveit_config)/config/joint_names.yaml"/>
+
+  <include file="$(find ur5_2fgripper_moveit_config)/launch/default_warehouse_db.launch" />
 
   <!-- publish the robot state (tf transforms) -->
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
