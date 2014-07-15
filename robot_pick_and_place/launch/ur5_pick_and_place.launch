@@ -10,13 +10,13 @@
 		<param name="max_range" type="double" value="5.0" />
   </node>
 
-	<!-- moveit -->
+	<!-- moveit 
   <include file="$(find ur5_2fgripper_moveit_config)/launch/move_group.launch">
     <arg name="publish_monitored_planning_scene" value="true" />
   </include>
 
   <rosparam command="load" file="$(find ur5_2fgripper_moveit_config)/config/joint_names.yaml"/>
 
-  <include file="$(find ur5_2fgripper_moveit_config)/launch/default_warehouse_db.launch" />
+  <include file="$(find ur5_2fgripper_moveit_config)/launch/default_warehouse_db.launch" />-->
 
 </launch>
