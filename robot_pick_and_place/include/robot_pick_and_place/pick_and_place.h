@@ -9,6 +9,7 @@
 #include <moveit_msgs/GetStateValidity.h>
 #include <object_manipulation_msgs/GraspHandPostureExecutionAction.h>
 #include <tf/transform_listener.h>
+#include <tf/transform_broadcaster.h>
 #include <tf_conversions/tf_eigen.h>
 #include <robot_pick_and_place/pick_and_place_utilities.h>
 #include <handle_detector/GraspPoseCandidates.h>
@@ -25,6 +26,7 @@ typedef actionlib::SimpleActionClient<object_manipulation_msgs::GraspHandPosture
 typedef boost::shared_ptr<GraspActionClient> GraspActionClientPtr;
 typedef boost::shared_ptr<move_group_interface::MoveGroup> MoveGroupPtr;
 typedef boost::shared_ptr<tf::TransformListener> TransformListenerPtr;
+typedef boost::shared_ptr<tf::TransformBroadcaster> TransformBroadcasterPtr;
 typedef std::vector<move_group_interface::MoveGroup::Plan> MotionPlanArray;
 typedef std::vector<moveit_msgs::RobotState> RobotStateMsgArray;
 typedef std::vector<moveit_msgs::CollisionObject> CollisionObjectArray;
@@ -99,7 +101,13 @@ namespace robot_pick_and_place
 
 		void add_obstacle_to_planning_scene(const moveit_msgs::CollisionObject &obstacle,bool add);
 
+		void remove_obstacle_from_planning_scene(const moveit_msgs::CollisionObject &obstacle);
+
+		void remove_all_obstacles_from_planning_scene();
+
 		void publish_planning_scene();
+
+		void broadcast_tcp_candidate(const geometry_msgs::Pose& world_to_tcp_pose);
 
 
 	protected:
@@ -138,6 +146,8 @@ namespace robot_pick_and_place
 
 		// tf
 		TransformListenerPtr transform_listener_ptr;
+		TransformBroadcasterPtr transform_broadcast_ptr_;
+
 
 
 	};
