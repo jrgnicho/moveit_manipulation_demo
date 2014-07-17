@@ -15,10 +15,17 @@ find_package(catkin REQUIRED COMPONENTS
 #######################################
 ## Declare ROS messages and services ##
 #######################################
+add_message_files(
+	FILES
+	RegisterData.msg
+  RegisterInfo.msg
+)
+
 ## Generate services in the 'srv' folder
 add_service_files(
-   FILES
-   DigitalOutputUpdate.srv
+	FILES
+	DigitalOutputUpdate.srv
+	SoemIO.srv
 )
 
 ## Generate added messages and services with any dependencies listed here
