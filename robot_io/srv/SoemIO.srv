@@ -1,0 +1,4 @@
+robot_io/RegisterData[] output_data
+robot_io/RegisterInfo[] input_info
+---
+robot_io/RegisterData[] input_data
