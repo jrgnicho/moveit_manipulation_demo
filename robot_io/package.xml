@@ -25,6 +25,7 @@
   <build_depend>actionlib</build_depend>
 	<build_depend>actionlib_msgs</build_depend>
 	<build_depend>ur_msgs</build_depend>
+	<build_depend>ethercat_soem</build_depend>
 
   <run_depend>roscpp</run_depend>
   <run_depend>object_manipulation_msgs</run_depend>
@@ -32,6 +33,7 @@
 	<run_depend>actionlib_msgs</run_depend>
 	<run_depend>ur_msgs</run_depend>
   <run_depend>message_runtime</run_depend>
+  <run_depend>ethercat_soem</run_depend>
 
   <export>
   </export>

@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<launch>
+    <node pkg="robot_io" type="soem_manager" name="soem_manager" output="screen">
+		  <param name="ifname" value="eth1" type="str"/>
+		  <param name="device_name" value="ss" type="str"/>
+		</node>
+</launch>

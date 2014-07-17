@@ -4,6 +4,7 @@ project(robot_io)
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS 
   roscpp 
+	ethercat_soem
   object_manipulation_msgs
   actionlib
 	ur_msgs
@@ -57,6 +58,8 @@ add_executable(suction_gripper_action_server src/nodes/suction_gripper_action_se
 target_link_libraries(suction_gripper_action_server ${catkin_LIBRARIES})
 
 #add_executable(digital_output_server src/nodes/digital_output_update_server.cpp)
+add_executable(soem_manager src/nodes/soem_manager.cpp)
+target_link_libraries(soem_manager ${catkin_LIBRARIES})
 
 add_executable(simulated_grasp_action_server src/nodes/simulated_grasp_action_server.cpp)
 target_link_libraries(simulated_grasp_action_server ${catkin_LIBRARIES})
