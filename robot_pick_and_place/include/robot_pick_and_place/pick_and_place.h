@@ -35,6 +35,10 @@ namespace robot_pick_and_place
 {
 	class PickAndPlace
 	{
+
+	public:
+		static const std::string WORLD_OBSTACLES_ID;
+
 	public:
 		PickAndPlace()
 		{
@@ -103,9 +107,9 @@ namespace robot_pick_and_place
 
 		void remove_obstacle_from_planning_scene(const moveit_msgs::CollisionObject &obstacle);
 
-		void remove_all_obstacles_from_planning_scene();
+		void reset_planning_scene();
 
-		void publish_planning_scene();
+		void publish_planning_scene(bool diff = false);
 
 		void broadcast_tcp_candidate(const geometry_msgs::Pose& world_to_tcp_pose);
 
@@ -138,6 +142,8 @@ namespace robot_pick_and_place
 
 		// planning support
 		CollisionObjectArray obstacles_;
+		//std::map<std::string,moveit_msgs::CollisionObject> world_obstacles_map_;
+		//moveit_msgs::CollisionObject world_obstacles_;
 		moveit_msgs::CollisionObject target_obj_on_world_;
 		moveit_msgs::AttachedCollisionObject target_obj_attached_;
 
