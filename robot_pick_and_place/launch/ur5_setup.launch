@@ -46,7 +46,7 @@
 
 		<!-- simulated sensor data -->
 		<include file="$(find robot_pick_and_place)/launch/ur5_publish_test_point_cloud.launch">
-			<arg name="use_pcd_file" value="true"/>
+			<arg name="use_pcd_file" value="false"/>
 		</include>
 
 	</group>
