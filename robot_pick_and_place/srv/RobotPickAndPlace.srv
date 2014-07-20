@@ -1,0 +1,6 @@
+moveit_msgs/Grasp[] pick_grasps
+moveit_msgs/PlaceLocation[] place_location
+moveit_msgs/CollisionObject[] targets
+---
+int32 pick_and_place_completed
+
