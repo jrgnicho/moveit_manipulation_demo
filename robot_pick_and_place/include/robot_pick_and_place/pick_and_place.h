@@ -12,6 +12,7 @@
 #include <tf/transform_broadcaster.h>
 #include <tf_conversions/tf_eigen.h>
 #include <robot_pick_and_place/pick_and_place_utilities.h>
+#include <robot_pick_and_place/RobotPickAndPlace.h>
 #include <handle_detector/GraspPoseCandidates.h>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
@@ -37,9 +38,6 @@ namespace robot_pick_and_place
 	{
 
 	public:
-		static const std::string WORLD_OBSTACLES_ID;
-
-	public:
 		PickAndPlace()
 		{
 
@@ -48,6 +46,8 @@ namespace robot_pick_and_place
 		bool init();
 
 		void run();
+
+		void run_as_service();
 
 	protected:
 
@@ -74,7 +74,10 @@ namespace robot_pick_and_place
 
 		bool update_planning_scene();
 
-		bool get_robot_states_at_pick(RobotStateMsgArray& rs);
+		bool get_grasp_candidates(handle_detector::GraspPoseCandidates::Response& grasp_candidates);
+
+		bool get_robot_states_at_pick(const handle_detector::GraspPoseCandidates::Response& grasp_candidates,
+				RobotStateMsgArray& rs);
 
 		bool get_robot_states_at_place(RobotStateMsgArray& rs);
 
@@ -112,6 +115,9 @@ namespace robot_pick_and_place
 		void publish_planning_scene(bool diff = false);
 
 		void broadcast_tcp_candidate(const geometry_msgs::Pose& world_to_tcp_pose);
+
+		bool pick_and_place_server_callback(robot_pick_and_place::RobotPickAndPlace::Request &req,
+				robot_pick_and_place::RobotPickAndPlace::Response &res);
 
 
 	protected:

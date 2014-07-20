@@ -51,6 +51,7 @@ public:
   std::string GRASP_POSES_SERVICE; // service for grasp pose
   std::string IK_SERVICE; // service for requesting ik
   std::string MOTION_PLAN_SERVICE; // service for requesting moveit for a motion plan
+  std::string PICK_AND_PLACE_SERVICE;
 
   // =============================== Messages and variables ===============================
   geometry_msgs::Pose TCP_TO_TARGET_POSE;
@@ -65,6 +66,7 @@ public:
     GRASP_POSES_SERVICE = "grasp_poses";
     IK_SERVICE = "compute_ik";
     MOTION_PLAN_SERVICE = "plan_kinematic_path";
+    PICK_AND_PLACE_SERVICE = "robot_pick_and_place";
     WRIST_LINK_NAME = "ee_link";
     ATTACHED_OBJECT_LINK_NAME = "attached_object_link";
     WORLD_FRAME_ID  = "world_frame";

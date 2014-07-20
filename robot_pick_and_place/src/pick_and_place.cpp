@@ -10,8 +10,6 @@
 namespace robot_pick_and_place
 {
 
-const std::string PickAndPlace::WORLD_OBSTACLES_ID= "world_obstacles" ;
-
 bool PickAndPlace::init()
 {
 	using namespace moveit::core;
@@ -125,8 +123,141 @@ void PickAndPlace::run()
 	}
 }
 
+void PickAndPlace::run_as_service()
+{
+	ros::NodeHandle nh;
+
+
+	ros::ServiceServer pick_and_place_server = nh.advertiseService(
+			cfg.PICK_AND_PLACE_SERVICE,
+			&PickAndPlace::pick_and_place_server_callback,this);
+
+	ros::spin();
+	ros::waitForShutdown();
+
+}
+
+bool PickAndPlace::pick_and_place_server_callback(
+		robot_pick_and_place::RobotPickAndPlace::Request &req,
+				robot_pick_and_place::RobotPickAndPlace::Response &res)
+{
+
+	while(ros::ok())
+	{
+		handle_detector::GraspPoseCandidates::Response grasp_candidates;
+		RobotStateMsgArray pick_states;
+		RobotStateMsgArray place_states;
+		moveit_msgs::RobotState pick_start_state;
+		moveit_msgs::RobotState place_start_state;
+		moveit_msgs::RobotState start_to_wait_state,end_to_wait_state;
+
+		// clear results
+		pick_motion_plans_.clear();
+		place_motion_plans_.clear();
+		home_motion_plan_ = move_group_interface::MoveGroup::Plan();
+
+		// moving home
+		move_to_wait_position();
+
+		update_planning_scene();
+		reset_planning_scene();
+		publish_planning_scene();
+
+		// request grasp candidates
+		if(!get_grasp_candidates(grasp_candidates))
+		{
+			ROS_ERROR_STREAM("Grasp candidates not available, exiting");
+			break;
+		}
+
+
+		ROS_INFO_STREAM("Evaluating candidate pick poses");
+		if(!get_robot_states_at_pick(grasp_candidates,pick_states) )
+		{
+			ROS_ERROR_STREAM("creation of robot states at pick failed");
+			continue;
+		}
+
+		ROS_INFO_STREAM("Evaluating place poses");
+		if(!get_robot_states_at_place(place_states))
+		{
+			ROS_ERROR_STREAM("creation of robot states at place failed");
+			continue;
+		}
+
+		// creating pick motion plans
+		ROS_INFO_STREAM("Creating pick motion plans");
+		robot_state::robotStateToRobotStateMsg(*move_group_ptr->getCurrentState(),pick_start_state);
+		if(!create_pick_motion_plans(pick_start_state,pick_states,pick_motion_plans_))
+		{
+			ROS_ERROR_STREAM("creation of pick motion plans failed");
+			continue;
+		}
+
+		// creating place motion plans
+		ROS_INFO_STREAM("Creating place motion plans");
+		place_start_state = moveit_msgs::RobotState(pick_states.back());
+		if(!create_place_motion_plans(place_start_state,place_states,place_motion_plans_))
+		{
+			ROS_ERROR_STREAM("creation of place motion plans failed");
+			continue;
+		}
+
+		// create motion plan to go back to home
+		// planning move to wait pose
+		if(move_group_ptr->setNamedTarget(cfg.WAIT_POSE_NAME))
+		{
+			start_to_wait_state = place_states.back();
+			attach_object(false,target_obj_attached_,start_to_wait_state);
+			robot_state::robotStateToRobotStateMsg(move_group_ptr->getJointValueTarget(),end_to_wait_state);
+		}
+		else
+		{
+			ROS_ERROR_STREAM("could not set joint target: '"<<cfg.WAIT_POSE_NAME<<"'");
+			continue;
+		}
+
+		if(!create_motion_plan(place_states.back(),end_to_wait_state,home_motion_plan_))
+		{
+			ROS_ERROR_STREAM("creation of home motion plan failed");
+			continue;
+		}
+
+		// removing obstacles from planning scene
+		add_obstacles_to_planning_scene(obstacles_,false);
+		//planning_scene_ptr->setCurrentState(end_to_wait_state);
+		publish_planning_scene();
+
+		// run all motion plans
+		if(execute_pick_motion_plans(pick_motion_plans_) &&
+				execute_place_motion_plans(place_motion_plans_) &&
+				move_group_ptr->execute(home_motion_plan_))
+		{
+			show_target_at_place(false);
+			move_group_ptr->setStartState(end_to_wait_state);
+
+			ROS_INFO_STREAM("Pick and place motions completed");
+		}
+		else
+		{
+			ROS_INFO_STREAM("Pick and place motions failed");
+
+			move_group_ptr->setStartState(end_to_wait_state);
+			continue;
+		}
+
+
+		res.pick_and_place_completed++;
+
+	}
+
+	return true;
+}
+
 bool PickAndPlace::plan_all_motions()
 {
+
+	handle_detector::GraspPoseCandidates::Response grasp_candidates;
 	RobotStateMsgArray pick_states;
 	RobotStateMsgArray place_states;
 	moveit_msgs::RobotState pick_start_state;
@@ -137,14 +268,22 @@ bool PickAndPlace::plan_all_motions()
 	reset_planning_scene();
 	publish_planning_scene();
 
-	ROS_INFO_STREAM("Planning robot picks");
-	if(!get_robot_states_at_pick(pick_states) )
+	// request grasp candidates
+	if(!get_grasp_candidates(grasp_candidates))
+	{
+		ROS_ERROR_STREAM("Grasp candidates not available, exiting");
+		return false;
+	}
+
+
+	ROS_INFO_STREAM("Evaluating candidate pick poses");
+	if(!get_robot_states_at_pick(grasp_candidates,pick_states) )
 	{
 		ROS_ERROR_STREAM("creation of robot states at pick failed");
 		return false;
 	}
 
-	ROS_INFO_STREAM("Planning robot place");
+	ROS_INFO_STREAM("Evaluating place poses");
 	if(!get_robot_states_at_place(place_states))
 	{
 		ROS_ERROR_STREAM("creation of robot states at place failed");
@@ -217,7 +356,7 @@ bool PickAndPlace::create_motion_plan(const moveit_msgs::RobotState &start_state
 	req.start_state.is_diff = true;
 	req.group_name = cfg.ARM_GROUP_NAME;
 	req.goal_constraints.push_back(joint_goal);
-	req.allowed_planning_time = 60.0f;
+	req.allowed_planning_time = 30.0f;
 	req.num_planning_attempts = 1;
 
 	// call planner
@@ -269,18 +408,38 @@ bool PickAndPlace::create_motion_plan(const geometry_msgs::Pose &pose_target,
 	return success;
 }
 
-bool PickAndPlace::get_robot_states_at_pick(RobotStateMsgArray& rs)
+bool PickAndPlace::get_grasp_candidates(handle_detector::GraspPoseCandidates::Response& grasp_candidates)
 {
 	using namespace robot_pick_and_place;
 	using namespace handle_detector;
 
-	ROS_INFO_STREAM("detecting target");
+	ROS_INFO_STREAM("requesting grasp candidates");
 
 	// grasp candidates request
 	GraspPoseCandidates gp;
-	gp.request.candidates_per_pose = 10;
+	gp.request.candidates_per_pose = 6;
 	gp.request.gripper_workrange=cfg.GRIPPER_WORKRANGE;
 	gp.request.planning_frame_id = cfg.WORLD_FRAME_ID;
+
+	if(grasp_pose_client.call(gp))
+	{
+		grasp_candidates = gp.response;
+		ROS_INFO_STREAM("received "<<grasp_candidates.candidate_collision_objects.size()<<" targets with "<<
+				grasp_candidates.candidate_grasp_poses[0].poses.size()<<" candidate grasp candidates each");
+		return true;
+	}
+	else
+	{
+		ROS_ERROR_STREAM("received 0 grasp candidates");
+		return false;
+	}
+}
+
+bool PickAndPlace::get_robot_states_at_pick(const handle_detector::GraspPoseCandidates::Response& grasp_candidates,
+		RobotStateMsgArray& rs)
+{
+	using namespace robot_pick_and_place;
+	using namespace handle_detector;
 
 	// collision objects
 	moveit_msgs::CollisionObject col;
@@ -293,101 +452,94 @@ bool PickAndPlace::get_robot_states_at_pick(RobotStateMsgArray& rs)
 	geometry_msgs::Pose world_to_target_pose, world_to_tcp_pose;
 	tf::Transform world_to_tcp_tf, world_to_target_tf;
 	bool found_valid_poses = false;
-	if(grasp_pose_client.call(gp))
+
+	// update scene
+	update_planning_scene();
+
+	// saving all graspable objects detected for collision avoidance
+	obstacles_ = grasp_candidates.candidate_collision_objects;
+
+
+	for(int i = 0; i <grasp_candidates.candidate_grasp_poses.size();i++)
 	{
-		// update scene
-		update_planning_scene();
+		const std::vector<geometry_msgs::Pose> &poses = grasp_candidates.candidate_grasp_poses[i].poses;
+		CollisionObjectArray current_obs = grasp_candidates.candidate_collision_objects;
+		current_obs.erase(current_obs.begin()+i);
 
-		// saving all graspable objects detected for collision avoidance
-		obstacles_ = gp.response.candidate_collision_objects;
+		// adding obstacles to planning scene not including target
+		add_obstacles_to_planning_scene(obstacles_,false);
+		add_obstacles_to_planning_scene(current_obs,true);
 
+		//marker_publisher.publish(grasp_candidates.candidate_objects.markers[i]);
 
-		for(int i = 0; i <gp.response.candidate_grasp_poses.size();i++)
+		ROS_INFO_STREAM("Evaluating "<<poses.size()<<" candidate poses");
+
+		for(int j = 0;j < poses.size();j++)
 		{
-			std::vector<geometry_msgs::Pose> &poses = gp.response.candidate_grasp_poses[i].poses;
-			CollisionObjectArray current_obs = gp.response.candidate_collision_objects;
-			current_obs.erase(current_obs.begin()+i);
+			// creating tcp pose from target pose
+			const geometry_msgs::Pose &p = poses[j];
+			tf::poseMsgToTF(p,world_to_target_tf);
+			world_to_tcp_tf.setRotation(world_to_target_tf.getRotation()*
+					tf::Quaternion(tf::Vector3(1,0,0),M_PI));// inverting z vector
+			world_to_tcp_tf.setOrigin(world_to_target_tf.getOrigin());
+			tf::poseTFToMsg(world_to_tcp_tf,world_to_tcp_pose);
 
-			// adding obstacles to planning scene not including target
-			add_obstacles_to_planning_scene(obstacles_,false);
-			add_obstacles_to_planning_scene(current_obs,true);
+			// creating pick poses for tcp
+			tcp_poses = create_poses_at_pick(world_to_tcp_tf);
 
-			//marker_publisher.publish(gp.response.candidate_objects.markers[i]);
+			// shows current candidate pose in rviz
+			broadcast_tcp_candidate(tcp_poses.poses[1]);
+			rs.clear();
 
-			ROS_INFO_STREAM("Evaluating "<<poses.size()<<" candidate poses");
-
-			for(int j = 0;j < poses.size();j++)
+			if(solve_ik(tcp_poses,rs))
 			{
-				// creating tcp pose from target pose
-				geometry_msgs::Pose &p = poses[j];
-				tf::poseMsgToTF(p,world_to_target_tf);
-				world_to_tcp_tf.setRotation(world_to_target_tf.getRotation()*
-						tf::Quaternion(tf::Vector3(1,0,0),M_PI));// inverting z vector
-				world_to_tcp_tf.setOrigin(world_to_target_tf.getOrigin());
-				tf::poseTFToMsg(world_to_tcp_tf,world_to_tcp_pose);
+				// attach and evaluate
+				ROS_INFO_STREAM("Ik solution found "<<rs.size() <<" poses with pick at:\n"
+						<<tcp_poses.poses[1]);
 
-				// creating pick poses for tcp
-				tcp_poses = create_poses_at_pick(world_to_tcp_tf);
-
-				// shows current candidate pose in rviz
-				broadcast_tcp_candidate(tcp_poses.poses[1]);
-				rs.clear();
-
-				if(solve_ik(tcp_poses,rs))
-				{
-					// attach and evaluate
-					ROS_INFO_STREAM("Ik solution found "<<rs.size() <<" poses with pick at:\n"
-							<<tcp_poses.poses[1]);
-
-					att.object = gp.response.candidate_collision_objects[i];
-					//attach_object(true,att,rs[2]);
-				}
-				else
-				{
-					ROS_ERROR_STREAM("Ik not found for pick poses "<<j);
-					continue;
-				}
-
-				//publish_planning_scene();
-				RobotStateMsgArray rstempts;
-				rstempts.push_back(rs[0]);
-				rstempts.push_back(rs[2]);
-				if(validate_states(rstempts))
-				{
-					// saving results
-					target_obj_on_world_= gp.response.candidate_collision_objects[i];
-					//target_obj_on_world_.id = "collision_object";
-					target_obj_attached_.object = gp.response.candidate_collision_objects[i];
-					target_marker_= gp.response.candidate_objects.markers[i];
-					obstacles_.erase(obstacles_.begin()+i); // removing target from obstacles
-					found_valid_poses = true;
-
-
-					//ROS_INFO_STREAM("Found valid tcp grasp poses at index "<< j <<" with grasp pose at:\n"<<world_to_tcp_pose);
-					ROS_INFO_STREAM("Found valid tcp grasp poses at index "<< j );
-					break;
-				}
-
+				//att.object = grasp_candidates.candidate_collision_objects[i];
+				//attach_object(true,att,rs[2]);
+			}
+			else
+			{
+				ROS_ERROR_STREAM("Ik not found for pick poses "<<j);
+				continue;
 			}
 
-
-
-			if(found_valid_poses)
+			//publish_planning_scene();
+			RobotStateMsgArray rstempts;
+			rstempts.push_back(rs[0]);
+			rstempts.push_back(rs[2]);
+			if(validate_states(rstempts))
 			{
+				// saving results
+				target_obj_on_world_= grasp_candidates.candidate_collision_objects[i];
+				target_obj_attached_.object = grasp_candidates.candidate_collision_objects[i];
+				target_marker_= grasp_candidates.candidate_objects.markers[i];
+				obstacles_.erase(obstacles_.begin()+i); // removing target from obstacles
+				found_valid_poses = true;
+
+
+				//ROS_INFO_STREAM("Found valid tcp grasp poses at index "<< j <<" with grasp pose at:\n"<<world_to_tcp_pose);
+				ROS_INFO_STREAM("Found valid tcp grasp poses at index "<< j );
 				break;
 			}
+
 		}
 
-		if(!found_valid_poses)
+
+
+		if(found_valid_poses)
 		{
-			ROS_ERROR_STREAM("Reachable grasp pose not found, exiting");
+			break;
 		}
+	}
 
-	}
-	else
+	if(!found_valid_poses)
 	{
-		ROS_ERROR_STREAM("grasp pose call to service failed, exiting");
+		ROS_ERROR_STREAM("Reachable grasp pose not found, exiting");
 	}
+
 
 	return found_valid_poses;
 
@@ -706,36 +858,24 @@ bool PickAndPlace::create_place_motion_plans(const moveit_msgs::RobotState &star
 void PickAndPlace::move_to_wait_position()
 {
 
-  // task variables
-  bool success; // saves the move result
+	moveit_msgs::RobotState start_to_wait_state,end_to_wait_state;
 
-  /* Fill Code:
-   * Goal:
-   * - Set robot wait target
-   * Hints:
-   * - Use the 'setNamedTarget' method in the 'move_group' object.
-   * */
-  move_group_ptr->setNamedTarget(cfg.WAIT_POSE_NAME);
+	move_group_ptr->setNamedTarget(cfg.WAIT_POSE_NAME);
+	robot_state::robotStateToRobotStateMsg(*move_group_ptr->getCurrentState(),start_to_wait_state);
+	robot_state::robotStateToRobotStateMsg(move_group_ptr->getJointValueTarget(),end_to_wait_state);
 
-  // set allowed planning time
-  move_group_ptr->setPlanningTime(60.0f);
-
-  /* Fill Code:
-   * Goal:
-   * - Move the robot
-   * Hints:
-   * - Use the 'move' method in the 'move_group' object and save the result
-   *  in the 'success' variable*/
-  success = move_group_ptr->move();
-  if(success)
-  {
-    ROS_INFO_STREAM("Move " << cfg.WAIT_POSE_NAME<< " Succeeded");
-  }
-  else
-  {
-    ROS_ERROR_STREAM("Move " << cfg.WAIT_POSE_NAME<< " Failed");
-    exit(1);
-  }
+	// set allowed planning time
+	//move_group_ptr->setPlanningTime(60.0f);
+	if(create_motion_plan(start_to_wait_state,end_to_wait_state,home_motion_plan_) &&
+			move_group_ptr->execute(home_motion_plan_))
+	{
+		ROS_INFO_STREAM("Move to " << cfg.WAIT_POSE_NAME<< " Succeeded");
+	}
+	else
+	{
+		ROS_ERROR_STREAM("Move to " << cfg.WAIT_POSE_NAME<< " Failed");
+		exit(1);
+	}
 }
 
 bool PickAndPlace::execute_pick_motion_plans(const MotionPlanArray& mp)

@@ -32,7 +32,7 @@ include_directories(include
 add_service_files(
    FILES
    GetTargetPose.srv
-	 GraspPose.srv
+	 RobotPickAndPlace.srv
 )
 
 ## Generate added messages and services with any dependencies listed here
@@ -41,7 +41,8 @@ generate_messages(
 		std_msgs
 		shape_msgs
 		pcl_msgs
-		visualization_msgs)
+		visualization_msgs
+		moveit_msgs)
 
 ###################################
 ## catkin specific configuration ##
@@ -84,6 +85,13 @@ add_executable(pick_and_place_node
 	src/utilities/pick_and_place_utilities.cpp)
 add_dependencies(pick_and_place_node ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(pick_and_place_node ${catkin_LIBRARIES})
+
+add_executable(pick_and_place_service 
+	src/services/pick_and_place_service.cpp
+	src/pick_and_place.cpp
+	src/utilities/pick_and_place_utilities.cpp)
+add_dependencies(pick_and_place_service ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(pick_and_place_service ${catkin_LIBRARIES})
 
 
 	

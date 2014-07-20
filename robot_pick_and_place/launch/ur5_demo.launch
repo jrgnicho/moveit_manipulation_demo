@@ -1,0 +1,63 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="sim_robot" default="true"/>
+	<arg name="sim_sensor" default="true"/>
+  <arg name="robot_ip" unless="$(arg sim_robot)"/>
+
+  <!-- moveit components -->
+  <include file="$(find ur5_2fgripper_moveit_config)/launch/moveit_planning_execution.launch">
+    <arg name="sim" value="$(arg sim_robot)"/>
+    <arg unless="$(arg sim_robot)" name="robot_ip" value="$(arg robot_ip)"/>
+  </include>
+
+  <!-- simulated robot mode nodes-->
+  <group if="$(arg sim_robot)">
+
+    <!-- grasp action service (simulated) -->
+    <node pkg="robot_io" type="simulated_grasp_action_server" name="gripper_action_server" output="screen"/>
+  </group>
+
+  <!-- robot interface (real robot) nodes -->
+  <group unless="$(arg sim_robot)">
+
+		<!-- grasp action service for vacuum gripper -->
+    <node pkg="robot_io" type="suction_gripper_action_server" name="gripper_action_server" output="screen"/>
+    <param name="suction_on_output_channel" value="0"/>
+    <param name="suction_check_output_channel" value="1"/>
+    <param name="use_sensor_feedback" value="false"/>
+
+ </group>
+
+	<!-- real sensor mode -->
+	<group unless="$(arg sim_sensor)">
+    <!-- sensor setup -->
+    <include file="$(find sensor_config)/launch/ur5_sensor_setup.launch"/>
+
+    <!-- grasp planning node -->
+		<include file="$(find robot_pick_and_place)/launch/ur5_grasp_planning.launch"/> 
+
+  </group>
+
+	<!-- simulated sensor mode -->
+	<group if="$(arg sim_sensor)">
+		
+		<!-- grasp planning node -->
+		<include file="$(find robot_pick_and_place)/launch/ur5_grasp_planning.launch"/>
+
+		<!-- simulated sensor data -->
+		<include file="$(find robot_pick_and_place)/launch/ur5_publish_test_point_cloud.launch">
+			<arg name="use_pcd_file" value="false"/>
+		</include>
+
+	</group>
+ 
+
+  <!-- rviz -->
+  <node name="$(anon rviz)" pkg="rviz" type="rviz" respawn="false" required="true"
+        args="-d $(find robot_pick_and_place)/config/ur5/rviz_config.rviz" output="screen" launch-prefix="nice">
+    <rosparam command="load" file="$(find ur5_2fgripper_moveit_config)/config/kinematics.yaml"/>
+  </node>
+
+	<!-- pick and place service -->
+	<include file="$(find robot_pick_and_place)/launch/ur5_pick_and_place_service.launch"/>
+</launch>

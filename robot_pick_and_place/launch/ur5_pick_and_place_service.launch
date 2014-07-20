@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- pick and place node -->
+  <node pkg="robot_pick_and_place" type="pick_and_place_service" name="pick_and_place_service" output="screen" required="true">
+    <rosparam command="load" file="$(find robot_pick_and_place)/config/ur5/pick_and_place_parameters.yaml"/>
+		<rosparam command="load" file="$(find ur5_2fgripper_moveit_config)/config/kinematics.yaml"/>
+  </node>
+
+</launch>
