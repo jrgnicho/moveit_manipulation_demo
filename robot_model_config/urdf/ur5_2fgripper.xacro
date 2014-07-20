@@ -6,6 +6,9 @@
 
 	<!-- property list -->
 	<xacro:property name="workcell_height" value="1"/>
+	<xacro:property name="workcell_length" value="2.775"/>
+	<xacro:property name="workcell_width" value="2.220"/>	
+	<xacro:property name="workcell_thickness" value="0.04"/>
 	<xacro:property name="robot_stand_height" value="0.20"/>
 	<xacro:property name="worktable_thickness" value="0.02"/>
 	<xacro:property name="worktable_leg_radius" value="0.02"/>
@@ -15,6 +18,12 @@
 	</material>
 	<material name="yellow">
 		<color rgba="0 1 1 1"/>
+	</material>
+	<material name="gray_transparent">
+		<color rgba="0.6 0.6 0.6 0.4"/>
+	</material>
+	<material name="blue_transparent">
+		<color rgba="0 0.8 1 0.4"/>
 	</material>
 
 	<!-- instantiating arm and gripper -->	
@@ -66,10 +75,67 @@
 			</link>
 		</xacro:macro>
 
+		<!-- geometry macros -->	
+		<xacro:macro name="workcell_geometry" params="length width height *color_block">
+				<geometry>
+					<box size="${length} ${width} ${height}"/>
+				</geometry>			
+				<xacro:insert_block name="color_block"/>
+		</xacro:macro>	
+		<xacro:macro name="workcell_element" params="name parent length width height offset_x offset_y">
+			<link name="${name}">
+				<visual>
+					<xacro:workcell_geometry length="${length}" width="${width}" height="${height}">
+						<material name="gray_transparent"/>
+					</xacro:workcell_geometry>
+				</visual>
+				<collision>
+					<xacro:workcell_geometry length="${length}" width="${width}" height="${height}">
+						<material name="blue_transparent"/>
+					</xacro:workcell_geometry>
+				</collision>
+			</link>
+			<joint name="${parent}_to_${name}" type="fixed">
+				<parent link="${parent}"/>
+				<child link="${name}"/>
+				<origin xyz="${offset_x} ${offset_y} ${0.5 * height}" rpy="0 0 0"/>
+			</joint>		
+		</xacro:macro>
+		<!-- end of geometry macros -->
+
+
+	<!-- workcell bounds macro -->
+		<xacro:macro name="workcell_bounds">
+
+			<link name="roof2">
+				<collision>
+					<origin xyz="0 0 ${workcell_height }" rpy="0 0 0"/>
+					<xacro:workcell_geometry length="${workcell_length * 0.5}"
+						 width="${workcell_width}" height="${workcell_thickness}">
+						<material name="blue_transparent"/>
+					</xacro:workcell_geometry>
+				</collision>
+			</link>
+
+			<joint name="workcell_to_roof2" type="fixed">
+				<parent link="world_frame"/>
+				<child link="roof2"/>
+				<origin xyz="${workcell_length * -0.25} 0 0" rpy="0 0 0"/>
+			</joint>
+			<xacro:workcell_element name="front_wall2" parent="world_frame"
+				 length="0.1" width="2.220" height="${workcell_height}" offset_x="-1.3375" offset_y="0"/>		 
+			<xacro:workcell_element name="back_wall2" parent="world_frame"
+				 length="0.04" width="2.00" height="${workcell_height}" offset_x="0.20" offset_y="0"/>
+			<xacro:workcell_element name="left_wall2" parent="world_frame" 
+				length="1.384" width="0.1" height="${workcell_height}" offset_x="-0.601" offset_y="1.060"/>
+			<xacro:workcell_element name="right_wall2" parent="world_frame" 
+				length="1.384" width="0.1" height="${workcell_height}" offset_x="-0.601" offset_y="-1.060"/>
+		</xacro:macro>
+	<!-- end of workcell bounds macro -->
 
 	<!-- workcell components -->
-
 		<link name="world_frame"/>
+		<xacro:workcell_bounds/>
 
 		<!--<xacro:work_table_link name="${arm_prefix}worktable" l="1.0" w="1.0" h="0.5"/>-->
 

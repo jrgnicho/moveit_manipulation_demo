@@ -1,9 +1,0 @@
-
-string planning_frame_id  # transform grasp poses to this frame
-float64 gripper_workrange # handles larger than this value are rejected
-int32 candidates_per_pose # generate n candidates per handle found
----
-
-bool succeeded
-geometry_msgs/PoseArray[] candidate_grasp_poses # n candidate poses per handle found
-visualization_msgs/MarkerArray candidate_objects # one cylinder marker per handle found
