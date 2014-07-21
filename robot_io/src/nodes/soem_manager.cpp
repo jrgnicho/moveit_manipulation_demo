@@ -31,6 +31,8 @@ using namespace boost::assign;
 
 #define EC_TIMEOUTMON 500
 
+typedef std::vector<uint8_t> BitArray;
+
 class SoemManager
 {
 public:
@@ -77,6 +79,40 @@ public:
 
 		if(init())
 		{
+			if(test_activate_gripper())
+			{
+				ROS_INFO_STREAM("Gripper activated");
+				return;
+			}
+			else
+			{
+				ROS_ERROR_STREAM("Gripper activate failed, exiting");
+				return;
+			}
+
+			if(test_close_gripper())
+			{
+				ros::Duration(4.0f).sleep();
+				ROS_INFO_STREAM("Gripper closed");
+			}
+			else
+			{
+				ROS_ERROR_STREAM("Gripper close failed, exiting");
+				return;
+			}
+
+			if(test_open_gripper())
+			{
+
+				ros::Duration(4.0f).sleep();
+				ROS_INFO_STREAM("Gripper opened");
+			}
+			else
+			{
+				ROS_ERROR_STREAM("Gripper open failed, exiting");
+				return;
+			}
+
 		}
 	}
 
@@ -95,10 +131,10 @@ protected:
 		if(ec_slavecount > 0)
 		{
 			std::stringstream ss;
-			for(int i =0;i < ec_slavecount;i++)
+			for(int i =1;i <= ec_slavecount;i++)
 			{
 				ec_slavet &sl = ec_slave[i];
-				ss<<"\tSlave["<<i+1<<"]\n";
+				ss<<"\tSlave["<<i<<"]\n";
 				ss<<"\t- Name: "<<std::string(sl.name)<<"\n";
 				ss<<"\t- Input Bytes: "<<sl.Ibytes<<"\n";
 				ss<<"\t- Input Bits: "<<sl.Ibits<<"\n";
@@ -130,10 +166,11 @@ protected:
 			// configuration
 			if(ec_config_init(FALSE)>0)
 			{
-				ROS_INFO_STREAM("SOEM found and configured "<<ec_slavecount<< "slaves");
+				ROS_INFO_STREAM("SOEM found and configured "<<ec_slavecount<< " slaves");
 
 				// mapping mailboxes for all found slaves
 				ec_config_map(&IOmap_);
+				ec_configdc();
 				ROS_INFO_STREAM("DC slaves "<< (ec_configdc()?"found": "not found"));
 
 				// wait for all slaves to reach SAFE_OP state
@@ -187,7 +224,7 @@ protected:
 	{
 		std::vector<uint8> bytes;
 		uint8 result;
-		std::vector<uint8_t> bit_array;
+		BitArray bit_array;
 
 		// creating array of test bytes
 		bytes.push_back(12);
@@ -206,12 +243,9 @@ protected:
 					" -> "<<(int)result);
 		}
 
-
-
-
 	}
 
-	uint8 bits_to_byte(const std::vector<uint8_t>& bit_array)
+	uint8 bits_to_byte(const BitArray& bit_array)
 	{
 		uint8 byte = 0;
 		for(int i = 0;i < bit_array.size(); i++)
@@ -222,7 +256,7 @@ protected:
 		return byte;
 	}
 
-	void byte_to_bits(uint8 byte, std::vector<uint8_t>& bit_array)
+	void byte_to_bits(uint8 byte, BitArray& bit_array)
 	{
 		bit_array.resize(8);
 		for(int i=0;i < 8;i++)
@@ -233,7 +267,7 @@ protected:
 
 	}
 
-	std::string bits_to_str(const std::vector<uint8_t>& bit_array)
+	std::string bits_to_str(const BitArray& bit_array)
 	{
 		std::stringstream ss;
 		ss<<"[";
@@ -245,14 +279,222 @@ protected:
 		return ss.str();
 	}
 
-	void test_open_gripper()
+	bool test_activate_gripper()
 	{
-		robot_io::RegisterData out1; //action requested
-		robot_io::RegisterData out3; // position requested
+		robot_io::RegisterData out1; //action requested byte
+		robot_io::SoemIO::Request out_registers;
+		out_registers.slave_no = 1;
 
-		// action requested
-		out1.bits = list_of(1)(0)(0)(0)(0)(0)(0);
+		out1.bits = list_of(1)(0)(0)(0)(0)(0)(0)(0);// activate gripper
+		out1.info.channel=0;
 
+		// saving output registers
+		out_registers.output_data.push_back(out1);
+
+		// writing registers
+		for(int i = 0; i < out_registers.output_data.size();i++)
+		{
+			if(!write_register(out_registers.slave_no,out_registers.output_data[i]))
+			{
+				ROS_ERROR_STREAM("write registers operation failed");
+				return false;
+			}
+		}
+
+		if(ec_send_processdata()<=0)
+		{
+			ROS_ERROR_STREAM("Process data was not transmitted");
+			return false;
+		}
+
+		ros::Duration(2.0f).sleep();
+		// read gripper status input register
+		robot_io::RegisterData in1;
+		in1.info.channel = 0;
+
+
+		// reading all input registers
+		ec_receive_processdata(EC_TIMEOUTRET);
+
+		for(int i = 0;i < 6;i++)
+		{
+			in1.info.channel=i;
+
+			if(read_register(out_registers.slave_no,in1.info,in1))
+			{
+				ROS_INFO_STREAM("Input register ["<<i<<"]: "<<bits_to_str(in1.bits));
+			}
+			else
+			{
+				ROS_ERROR_STREAM("Input register ["<<i<<"] read error");
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+
+	bool test_open_gripper()
+	{
+		robot_io::RegisterData out1; //action requested byte
+		robot_io::RegisterData out3; // position requested byte
+		robot_io::RegisterData out4; // speed byte ( 0(min) to (255) max )
+		robot_io::SoemIO::Request out_registers;
+		out_registers.slave_no = 1;
+
+
+		out1.bits = list_of(1)(0)(0)(1)(0)(0)(0)(0);// go to requested position
+		out1.info.channel=0;
+
+		out3.bits = list_of(0)(0)(0)(0)(0)(0)(0)(0);// fully opened
+		out3.info.channel=2;
+
+		out4.bits = list_of(0)(0)(0)(0)(0)(0)(0)(0);// slowest
+		out4.info.channel=3;
+
+		// saving output registers
+		out_registers.output_data.push_back(out1);
+		out_registers.output_data.push_back(out3);
+		out_registers.output_data.push_back(out4);
+
+		// writing registers
+		for(int i = 0; i < out_registers.output_data.size();i++)
+		{
+			if(!write_register(out_registers.slave_no,out_registers.output_data[i]))
+			{
+				ROS_ERROR_STREAM("write registers operation failed");
+				return false;
+			}
+		}
+
+		ec_send_processdata();
+
+		return true;
+	}
+
+	bool test_close_gripper()
+	{
+		robot_io::RegisterData out1; //action requested byte
+		robot_io::RegisterData out3; // position requested byte
+		robot_io::RegisterData out4; // speed byte ( 0(min) to (255) max )
+		robot_io::SoemIO::Request out_registers;
+		out_registers.slave_no = 1;
+
+
+		out1.bits = list_of(1)(0)(0)(1)(0)(0)(0)(0);// go to requested position
+		out1.info.channel=0;
+
+		out3.bits = list_of(1)(1)(1)(1)(1)(1)(1)(1);// fully closed
+		out3.info.channel=2;
+
+		out4.bits = list_of(0)(0)(0)(0)(0)(0)(0)(0);// slowest
+		out4.info.channel=3;
+
+		// saving output registers
+		out_registers.output_data.push_back(out1);
+		out_registers.output_data.push_back(out3);
+		out_registers.output_data.push_back(out4);
+
+		// writing registers
+		for(int i = 0; i < out_registers.output_data.size();i++)
+		{
+			if(!write_register(out_registers.slave_no,out_registers.output_data[i]))
+			{
+				ROS_ERROR_STREAM("write registers operation failed");
+				return false;
+			}
+		}
+
+		ec_send_processdata();
+
+		return true;
+
+	}
+
+	bool write_register(int slave_no,const robot_io::RegisterData& regist)
+	{
+		if(slave_no<= ec_slavecount 	)
+		{
+			// case when theres less than 8 bits available in register
+			if((ec_slave[slave_no].Obytes== 0) &&
+					(regist.info.channel != ec_slave[slave_no].Obytes))
+			{
+				ROS_ERROR_STREAM("Byte index greater than 0 not permitted");
+				return false;
+			}
+
+			if((ec_slave[slave_no].Obytes> 0) &&
+					(regist.info.channel >= ec_slave[slave_no].Obytes))
+			{
+				ROS_ERROR_STREAM("Byte index exceeds output bytes available");
+				return false;
+			}
+
+			write_output(slave_no, regist.info.channel,bits_to_byte(regist.bits));
+		}
+		else
+		{
+			ROS_ERROR_STREAM("slave index "<<slave_no<<" does not exists");
+			return false;
+		}
+
+		return true;
+	}
+
+	bool read_register(int slave_no,const robot_io::RegisterInfo& info,robot_io::RegisterData& regist)
+	{
+
+		if(slave_no<= ec_slavecount 	)
+		{
+			// case when theres less than 8 bits available in register
+			if((ec_slave[slave_no].Ibytes== 0) &&
+					(info.channel != ec_slave[slave_no].Ibytes))
+			{
+				ROS_ERROR_STREAM("Byte index greater than 0 not permitted");
+				return false;
+			}
+
+			if((ec_slave[slave_no].Ibytes> 0) &&
+					(info.channel >= ec_slave[slave_no].Ibytes))
+			{
+				ROS_ERROR_STREAM("Byte index exceeds input bytes available");
+				return false;
+			}
+
+			uint8 val;
+			read_input(slave_no,info.channel,&val);
+			byte_to_bits(val,regist.bits);
+			regist.info = info;
+		}
+		else
+		{
+			ROS_ERROR_STREAM("slave index "<<slave_no<<" does not exists");
+			return false;
+		}
+
+		return true;
+	}
+
+	void write_output(int slave_no,uint8 channel,uint8 val)
+	{
+		uint8 *ptr;
+		ptr = ec_slave[slave_no].outputs;
+		ptr += channel;
+
+		*ptr = val;
+
+		ROS_INFO_STREAM("output register ["<<(int)channel<<"] "<<(int)*ptr);
+	}
+
+	void read_input(int slave_no,uint8 channel,uint8* val)
+	{
+		uint8 *ptr;
+		ptr = ec_slave[slave_no].inputs;
+		ptr+=channel;
+		*val = *ptr;
+
+		ROS_INFO_STREAM("input register ["<<(int)channel<<"] "<<(int)*val);
 	}
 
 protected:
