@@ -1,3 +1,2 @@
 string label
-int32 channel
-int32 bits
+int32 channel # byte index
