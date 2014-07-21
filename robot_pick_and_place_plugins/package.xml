@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package>
+  <name>robot_pick_and_place_plugins</name>
+  <version>0.0.0</version>
+  <description>The robot_pick_and_place_plugins package</description>
+
+  <maintainer email="jnicho@swri.org">jnicho</maintainer> -->
+  <author email="jnicho@swri.org">jnicho</author>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rviz</build_depend>
+  <build_depend>robot_pick_and_place</build_depend>
+
+  <run_depend>roscpp</run_depend>
+  <run_depend>rviz</run_depend>
+  <run_depend>robot_pick_and_place</run_depend>
+
+  <export>
+		<rviz plugin="${prefix}/plugin.xml"/>
+  </export>
+
+</package>

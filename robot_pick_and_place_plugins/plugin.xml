@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<library path="lib/librobot_pick_and_place_plugins">
+  <class name="robot_pick_and_place_plugins/PickAndPlacePanel"
+         type="robot_pick_and_place_plugins::rviz_panels::PickAndPlacePanel"
+         base_class_type="rviz::Panel">
+    <description>
+      A panel widget for requesting a robot pick and place
+    </description>
+  </class>
+</library>
