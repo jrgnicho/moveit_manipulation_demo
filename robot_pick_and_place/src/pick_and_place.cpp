@@ -155,6 +155,8 @@ bool PickAndPlace::pick_and_place_server_callback(
 		pick_motion_plans_.clear();
 		place_motion_plans_.clear();
 		home_motion_plan_ = move_group_interface::MoveGroup::Plan();
+		show_target_at_place(false);
+		show_target_attached(false);
 
 		// moving home
 		move_to_wait_position();
