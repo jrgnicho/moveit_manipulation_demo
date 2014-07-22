@@ -32,6 +32,7 @@ using namespace boost::assign;
 #define EC_TIMEOUTMON 500
 
 typedef std::vector<uint8_t> BitArray;
+typedef std::vector<robot_io::RegisterData> RegisterArray;
 
 class SoemManager
 {
@@ -82,7 +83,6 @@ public:
 			if(test_activate_gripper())
 			{
 				ROS_INFO_STREAM("Gripper activated");
-				return;
 			}
 			else
 			{
@@ -92,8 +92,7 @@ public:
 
 			if(test_close_gripper())
 			{
-				ros::Duration(4.0f).sleep();
-				ROS_INFO_STREAM("Gripper closed");
+
 			}
 			else
 			{
@@ -104,8 +103,6 @@ public:
 			if(test_open_gripper())
 			{
 
-				ros::Duration(4.0f).sleep();
-				ROS_INFO_STREAM("Gripper opened");
 			}
 			else
 			{
@@ -184,12 +181,26 @@ protected:
 					return false;
 				}
 
+	            ec_slave[0].state = EC_STATE_OPERATIONAL;
+	            ec_slave[1].state = EC_STATE_OPERATIONAL;
+	            /* request OP state for all slaves */
+
 				// saving output frame on stack for subsequent retrieval
 				ec_send_processdata();
 				ec_receive_processdata(EC_TIMEOUTRET);
 
 				// setting operation state on all slaves
 				ec_writestate(0); // all
+				int chk = 40;
+				do
+				{
+					ec_send_processdata();
+					ec_receive_processdata(EC_TIMEOUTRET);
+					ec_statecheck(0, EC_STATE_OPERATIONAL, 50000);
+				}
+				while (chk-- && (ec_slave[0].state != EC_STATE_OPERATIONAL));
+
+
 				if(ec_statecheck(0,EC_STATE_OPERATIONAL, EC_TIMEOUTSTATE))
 				{
 					ROS_INFO_STREAM("OPERATIONAL state set");
@@ -281,15 +292,15 @@ protected:
 
 	bool test_activate_gripper()
 	{
-		robot_io::RegisterData out1; //action requested byte
+		robot_io::RegisterData out_action; //action requested byte
 		robot_io::SoemIO::Request out_registers;
 		out_registers.slave_no = 1;
 
-		out1.bits = list_of(1)(0)(0)(0)(0)(0)(0)(0);// activate gripper
-		out1.info.channel=0;
+		out_action.bits = list_of(1)(0)(0)(0)(0)(0)(0)(0);// activate gripper
+		out_action.info.channel=0;
 
 		// saving output registers
-		out_registers.output_data.push_back(out1);
+		out_registers.output_data.push_back(out_action);
 
 		// writing registers
 		for(int i = 0; i < out_registers.output_data.size();i++)
@@ -301,62 +312,67 @@ protected:
 			}
 		}
 
-		if(ec_send_processdata()<=0)
+		robot_io::RegisterData in_status;
+		RegisterArray in_registers;
+		in_status.bits = list_of(1)(0)(0)(0)(1)(1)(0)(0);
+		in_status.info.channel = 0;
+
+		in_registers.push_back(in_status);
+
+		int counter = 200;
+
+		robot_io::RegisterData in_actual;
+		bool success = false;
+		while(counter-- > 0 && !success)
 		{
-			ROS_ERROR_STREAM("Process data was not transmitted");
-			return false;
+            ec_send_processdata();
+            ec_receive_processdata(EC_TIMEOUTRET);
+
+            for(int i = 0;i < in_registers.size();i++)
+            {
+            	const robot_io::RegisterData &in_expected = in_registers[i];
+            	read_register(out_registers.slave_no,in_expected.info,in_actual);
+            	equal(in_actual.bits,in_expected.bits);
+            	{
+            		ROS_INFO_STREAM("Gripper initialized");
+            		success = true;
+            		break;
+            	}
+            }
+
+            usleep(5000);
 		}
 
-		ros::Duration(2.0f).sleep();
-		// read gripper status input register
-		robot_io::RegisterData in1;
-		in1.info.channel = 0;
+		print_input_registers(1,0,5);
 
 
-		// reading all input registers
-		ec_receive_processdata(EC_TIMEOUTRET);
-
-		for(int i = 0;i < 6;i++)
-		{
-			in1.info.channel=i;
-
-			if(read_register(out_registers.slave_no,in1.info,in1))
-			{
-				ROS_INFO_STREAM("Input register ["<<i<<"]: "<<bits_to_str(in1.bits));
-			}
-			else
-			{
-				ROS_ERROR_STREAM("Input register ["<<i<<"] read error");
-				return false;
-			}
-		}
-
-		return true;
+		return success;
 	}
 
 
 	bool test_open_gripper()
 	{
-		robot_io::RegisterData out1; //action requested byte
-		robot_io::RegisterData out3; // position requested byte
-		robot_io::RegisterData out4; // speed byte ( 0(min) to (255) max )
+		robot_io::RegisterData out_action; //action requested byte
+		robot_io::RegisterData out_position; // position requested byte
+		robot_io::RegisterData out_speed; // speed byte ( 0(min) to (255) max )
 		robot_io::SoemIO::Request out_registers;
 		out_registers.slave_no = 1;
 
 
-		out1.bits = list_of(1)(0)(0)(1)(0)(0)(0)(0);// go to requested position
-		out1.info.channel=0;
+		out_action.bits = list_of(1)(0)(0)(1)(0)(0)(0)(0);// go to requested position
+		out_action.info.channel=0;
 
-		out3.bits = list_of(0)(0)(0)(0)(0)(0)(0)(0);// fully opened
-		out3.info.channel=2;
+		out_position.bits = list_of(0)(0)(0)(0)(0)(0)(0)(0);// fully opened
+		out_position.info.channel=3;
 
-		out4.bits = list_of(0)(0)(0)(0)(0)(0)(0)(0);// slowest
-		out4.info.channel=3;
+		out_speed.bits = list_of(0)(0)(0)(0)(0)(0)(0)(0);// slowest
+		byte_to_bits(125,out_speed.bits);
+		out_speed.info.channel=4;
 
 		// saving output registers
-		out_registers.output_data.push_back(out1);
-		out_registers.output_data.push_back(out3);
-		out_registers.output_data.push_back(out4);
+		out_registers.output_data.push_back(out_action);
+		out_registers.output_data.push_back(out_position);
+		out_registers.output_data.push_back(out_speed);
 
 		// writing registers
 		for(int i = 0; i < out_registers.output_data.size();i++)
@@ -368,33 +384,62 @@ protected:
 			}
 		}
 
-		ec_send_processdata();
+		robot_io::RegisterData in_status;
+		RegisterArray in_registers;
+		in_status.bits = list_of(1)(0)(0)(0)(1)(1)(0)(0);
+		in_status.info.channel = 0;
+
+		//in_registers.push_back(in_status);
+
+		int counter = 400;
+		robot_io::RegisterData in_actual;
+		while(counter-- > 0 )
+		{
+            ec_send_processdata();
+            ec_receive_processdata(EC_TIMEOUTRET);
+
+            for(int i = 0;i < in_registers.size();i++)
+            {
+            	const robot_io::RegisterData &in_expected = in_registers[i];
+            	read_register(out_registers.slave_no,in_expected.info,in_actual);
+            	equal(in_actual.bits,in_expected.bits);
+            	{
+            		ROS_INFO_STREAM("Gripper opened");
+            		break;
+            	}
+            }
+
+            usleep(5000);
+		}
+
+		print_input_registers(1,0,5);
 
 		return true;
 	}
 
 	bool test_close_gripper()
 	{
-		robot_io::RegisterData out1; //action requested byte
-		robot_io::RegisterData out3; // position requested byte
-		robot_io::RegisterData out4; // speed byte ( 0(min) to (255) max )
+		robot_io::RegisterData out_action; //action requested byte
+		robot_io::RegisterData out_position; // position requested byte
+		robot_io::RegisterData out_speed; // speed byte ( 0(min) to (255) max )
 		robot_io::SoemIO::Request out_registers;
 		out_registers.slave_no = 1;
 
 
-		out1.bits = list_of(1)(0)(0)(1)(0)(0)(0)(0);// go to requested position
-		out1.info.channel=0;
+		out_action.bits = list_of(1)(0)(0)(1)(0)(0)(0)(0);// go to requested position
+		out_action.info.channel=0;
 
-		out3.bits = list_of(1)(1)(1)(1)(1)(1)(1)(1);// fully closed
-		out3.info.channel=2;
+		out_position.bits = list_of(1)(1)(1)(1)(1)(1)(1)(1);// fully closed
+		out_position.info.channel=3;
 
-		out4.bits = list_of(0)(0)(0)(0)(0)(0)(0)(0);// slowest
-		out4.info.channel=3;
+		out_speed.bits = list_of(0)(0)(0)(0)(0)(0)(0)(0);// slowest
+		byte_to_bits(125,out_speed.bits);
+		out_speed.info.channel=4;
 
 		// saving output registers
-		out_registers.output_data.push_back(out1);
-		out_registers.output_data.push_back(out3);
-		out_registers.output_data.push_back(out4);
+		out_registers.output_data.push_back(out_action);
+		out_registers.output_data.push_back(out_position);
+		out_registers.output_data.push_back(out_speed);
 
 		// writing registers
 		for(int i = 0; i < out_registers.output_data.size();i++)
@@ -406,10 +451,66 @@ protected:
 			}
 		}
 
-		ec_send_processdata();
+		robot_io::RegisterData in_status;
+		RegisterArray in_registers;
+		in_status.bits = list_of(1)(0)(0)(0)(1)(1)(0)(0);
+		in_status.info.channel = 0;
+
+		//in_registers.push_back(in_status);
+
+		int counter = 400;
+		robot_io::RegisterData in_actual;
+		while(counter-- > 0 )
+		{
+            ec_send_processdata();
+            ec_receive_processdata(EC_TIMEOUTRET);
+
+            for(int i = 0;i < in_registers.size();i++)
+            {
+            	const robot_io::RegisterData &in_expected = in_registers[i];
+            	read_register(out_registers.slave_no,in_expected.info,in_actual);
+            	equal(in_actual.bits,in_expected.bits);
+            	{
+            		ROS_INFO_STREAM("Gripper closed");
+            		break;
+            	}
+            }
+
+            usleep(5000);
+		}
+
+		print_input_registers(1,0,5);
 
 		return true;
 
+	}
+
+	void print_input_registers(int slave,int start,int end)
+	{
+		std::stringstream ss;
+
+		ec_slavet &sl = ec_slave[slave];
+		robot_io::RegisterData in;
+		for(int i = start; i <= end;i++)
+		{
+			in.info.channel = i;
+			read_register(slave,in.info,in);
+			ss<<"\tinput register "<<i<<" "<<bits_to_str(in.bits)<<"\n";
+		}
+
+		ROS_INFO_STREAM("Input registers"<<"\n"<<ss.str());
+	}
+
+	bool equal(const BitArray &b1,const BitArray &b2)
+	{
+		for(int i = 0;i <b1.size();i++)
+		{
+			if(b1[i]!=b2[i])
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	bool write_register(int slave_no,const robot_io::RegisterData& regist)
@@ -484,7 +585,6 @@ protected:
 
 		*ptr = val;
 
-		ROS_INFO_STREAM("output register ["<<(int)channel<<"] "<<(int)*ptr);
 	}
 
 	void read_input(int slave_no,uint8 channel,uint8* val)
@@ -494,7 +594,6 @@ protected:
 		ptr+=channel;
 		*val = *ptr;
 
-		ROS_INFO_STREAM("input register ["<<(int)channel<<"] "<<(int)*val);
 	}
 
 protected:
