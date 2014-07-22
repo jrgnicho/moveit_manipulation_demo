@@ -10,6 +10,14 @@
 #include <boost/assign.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/assign/std/vector.hpp>
+#include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/recursive_mutex.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
+
+#include <actionlib/server/action_server.h>
+#include <object_manipulation_msgs/GraspHandPostureExecutionAction.h>
+#include <object_manipulation_msgs/GraspHandPostureExecutionGoal.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -28,6 +36,8 @@
 #include <ethercat_soem/ethercatprint.h>
 
 using namespace boost::assign;
+using namespace object_manipulation_msgs;
+using namespace actionlib;
 
 #define EC_TIMEOUTMON 500
 
@@ -36,6 +46,10 @@ typedef std::vector<robot_io::RegisterData> RegisterArray;
 
 class SoemManager
 {
+
+	  typedef ActionServer<GraspHandPostureExecutionAction> GraspActionServer;
+	  typedef boost::shared_ptr<GraspActionServer> GraspActionServerPtr;
+	  typedef GraspActionServer::GoalHandle GoalHandle;
 public:
 
 	SoemManager():
@@ -53,6 +67,8 @@ public:
 	bool init()
 	{
 
+		ros::NodeHandle nh;
+
 		if(load_parameters())
 		{
 			ROS_INFO_STREAM("Parameters loaded");
@@ -68,6 +84,17 @@ public:
 			return false;
 		}
 
+		// start process thread
+		process_data_thread_ptr_ = new boost::thread(boost::bind(&SoemManager::process_data_monitor,this));
+
+		// star action server
+		grasp_action_server_ptr_ = GraspActionServerPtr(new GraspActionServer(nh, "grasp_execution_action",
+	                   boost::bind(&SoemManager::grasp_goal_callback, this, _1),
+	                   boost::bind(&SoemManager::grasp_cancel_callback, this, _1),
+	                   false));
+		grasp_action_server_ptr_->start();
+
+
 		return true;
 	}
 
@@ -75,41 +102,31 @@ public:
 	{
 
 
-		ROS_INFO_STREAM("test bit|byte conversions");
-		test_conversions();
+		//ROS_INFO_STREAM("test bit|byte conversions");
+		//test_conversions();
 
-		if(init())
+		if(init() && activate_gripper())
 		{
-			if(test_activate_gripper())
-			{
-				ROS_INFO_STREAM("Gripper activated");
-			}
-			else
-			{
-				ROS_ERROR_STREAM("Gripper activate failed, exiting");
-				return;
-			}
+			ROS_INFO_STREAM("Gripper activation complete, action service ready");
+			ros::waitForShutdown();
+		}
+		else
+		{
+			ROS_ERROR_STREAM("Gripper activate failed, exiting");
+		}
 
-			if(test_close_gripper())
-			{
+		close_soem();
+	}
 
-			}
-			else
-			{
-				ROS_ERROR_STREAM("Gripper close failed, exiting");
-				return;
-			}
+	void test_run()
+	{
 
-			if(test_open_gripper())
-			{
-
-			}
-			else
-			{
-				ROS_ERROR_STREAM("Gripper open failed, exiting");
-				return;
-			}
-
+		int counter = 10;
+		ros::Duration pause_duration(2.0f);
+		while(close_gripper() && open_gripper() && (counter-- > 0))
+		{
+			ROS_INFO_STREAM("Close and open sequece completed, waiting");
+			pause_duration.sleep();
 		}
 	}
 
@@ -181,9 +198,10 @@ protected:
 					return false;
 				}
 
+
+	            /* request OP state for all slaves */
 	            ec_slave[0].state = EC_STATE_OPERATIONAL;
 	            ec_slave[1].state = EC_STATE_OPERATIONAL;
-	            /* request OP state for all slaves */
 
 				// saving output frame on stack for subsequent retrieval
 				ec_send_processdata();
@@ -213,7 +231,6 @@ protected:
 
 				list_devices();
 
-				// finding device
 			}
 			else
 			{
@@ -229,6 +246,11 @@ protected:
 		}
 
 		return true;
+	}
+
+	void close_soem()
+	{
+		ec_close();
 	}
 
 	void test_conversions()
@@ -290,7 +312,7 @@ protected:
 		return ss.str();
 	}
 
-	bool test_activate_gripper()
+	bool activate_gripper()
 	{
 		robot_io::RegisterData out_action; //action requested byte
 		robot_io::SoemIO::Request out_registers;
@@ -303,6 +325,7 @@ protected:
 		out_registers.output_data.push_back(out_action);
 
 		// writing registers
+		boost::interprocess::scoped_lock<boost::recursive_mutex> lock(process_mutex_);
 		for(int i = 0; i < out_registers.output_data.size();i++)
 		{
 			if(!write_register(out_registers.slave_no,out_registers.output_data[i]))
@@ -311,6 +334,7 @@ protected:
 				return false;
 			}
 		}
+		lock.unlock();
 
 		robot_io::RegisterData in_status;
 		RegisterArray in_registers;
@@ -325,9 +349,9 @@ protected:
 		bool success = false;
 		while(counter-- > 0 && !success)
 		{
-            ec_send_processdata();
-            ec_receive_processdata(EC_TIMEOUTRET);
 
+			// reading input registers
+			lock.lock();
             for(int i = 0;i < in_registers.size();i++)
             {
             	const robot_io::RegisterData &in_expected = in_registers[i];
@@ -339,18 +363,18 @@ protected:
             		break;
             	}
             }
+            lock.unlock();
 
-            usleep(5000);
+            ros::Duration(0.1f).sleep();
 		}
 
 		print_input_registers(1,0,5);
-
 
 		return success;
 	}
 
 
-	bool test_open_gripper()
+	bool open_gripper()
 	{
 		robot_io::RegisterData out_action; //action requested byte
 		robot_io::RegisterData out_position; // position requested byte
@@ -375,6 +399,7 @@ protected:
 		out_registers.output_data.push_back(out_speed);
 
 		// writing registers
+		boost::interprocess::scoped_lock<boost::recursive_mutex> lock(process_mutex_);
 		for(int i = 0; i < out_registers.output_data.size();i++)
 		{
 			if(!write_register(out_registers.slave_no,out_registers.output_data[i]))
@@ -383,6 +408,7 @@ protected:
 				return false;
 			}
 		}
+		lock.unlock();
 
 		robot_io::RegisterData in_status;
 		RegisterArray in_registers;
@@ -391,13 +417,12 @@ protected:
 
 		//in_registers.push_back(in_status);
 
-		int counter = 400;
+		int counter = 20;
 		robot_io::RegisterData in_actual;
 		while(counter-- > 0 )
 		{
-            ec_send_processdata();
-            ec_receive_processdata(EC_TIMEOUTRET);
 
+			lock.lock();
             for(int i = 0;i < in_registers.size();i++)
             {
             	const robot_io::RegisterData &in_expected = in_registers[i];
@@ -405,11 +430,12 @@ protected:
             	equal(in_actual.bits,in_expected.bits);
             	{
             		ROS_INFO_STREAM("Gripper opened");
+            		counter = 0;
             		break;
             	}
             }
-
-            usleep(5000);
+            lock.unlock();
+            ros::Duration(0.1f).sleep();
 		}
 
 		print_input_registers(1,0,5);
@@ -417,7 +443,7 @@ protected:
 		return true;
 	}
 
-	bool test_close_gripper()
+	bool close_gripper()
 	{
 		robot_io::RegisterData out_action; //action requested byte
 		robot_io::RegisterData out_position; // position requested byte
@@ -442,14 +468,20 @@ protected:
 		out_registers.output_data.push_back(out_speed);
 
 		// writing registers
+		ROS_INFO_STREAM("locking process mutex");
+		boost::interprocess::scoped_lock<boost::recursive_mutex> lock(process_mutex_);
 		for(int i = 0; i < out_registers.output_data.size();i++)
 		{
 			if(!write_register(out_registers.slave_no,out_registers.output_data[i]))
 			{
 				ROS_ERROR_STREAM("write registers operation failed");
+
 				return false;
 			}
 		}
+
+		ROS_INFO_STREAM("unlocking process mutex");
+		lock.unlock();
 
 		robot_io::RegisterData in_status;
 		RegisterArray in_registers;
@@ -458,12 +490,12 @@ protected:
 
 		//in_registers.push_back(in_status);
 
-		int counter = 400;
+		int counter = 20;
 		robot_io::RegisterData in_actual;
+		ROS_INFO_STREAM("reading registers for gripper close");
 		while(counter-- > 0 )
 		{
-            ec_send_processdata();
-            ec_receive_processdata(EC_TIMEOUTRET);
+			lock.lock();
 
             for(int i = 0;i < in_registers.size();i++)
             {
@@ -475,8 +507,9 @@ protected:
             		break;
             	}
             }
+            lock.unlock();
+            ros::Duration(0.1f).sleep();
 
-            usleep(5000);
 		}
 
 		print_input_registers(1,0,5);
@@ -596,17 +629,134 @@ protected:
 
 	}
 
+	void process_data_monitor()
+	{
+		bool connected = true;
+		ROS_INFO_STREAM("Starting process monitor");
+		while(connected)
+		{
+			//boost::interprocess::scoped_lock<boost::recursive_mutex> lock(process_mutex_);
+			ec_readstate();
+			for(int i = 0; i <= ec_slavecount;i++)
+			{
+				if(ec_slave[i].state != EC_STATE_OPERATIONAL || ec_slave[i].islost)
+				{
+					ROS_ERROR_STREAM("One or more slaves were lost, exiting");
+					//close_soem();
+					connected = false;
+					break;
+				}
+			}
+
+			ec_send_processdata();
+			ec_receive_processdata(EC_TIMEOUTRET);
+			usleep(5000);
+		}
+
+		ROS_INFO_STREAM("Exiting process monitor");
+		//ros::shutdown();
+	}
+
+	  void grasp_goal_callback(GoalHandle gh)
+	  {
+	    std::string nodeName = ros::this_node::getName();
+
+	    ROS_INFO("%s",(nodeName + ": Received grasping goal").c_str());
+
+	    bool success;
+
+		switch(gh.getGoal()->goal)
+		{
+			case GraspHandPostureExecutionGoal::PRE_GRASP:
+
+				gh.setAccepted();
+				ROS_INFO_STREAM(nodeName + ": Pre-grasp command accepted");
+
+				if(open_gripper())
+				{
+					gh.setSucceeded();
+					ROS_INFO_STREAM(nodeName + ": Pre-grasp command succeeded");
+				}
+				else
+				{
+					gh.setAborted();
+					ROS_INFO_STREAM(nodeName + ": Pre-grasp command aborted");
+				}
+
+
+				break;
+
+			case GraspHandPostureExecutionGoal::GRASP:
+
+				gh.setAccepted();
+				ROS_INFO_STREAM(nodeName + ": Grasp command accepted");
+
+				if(close_gripper())
+				{
+
+					gh.setSucceeded();
+					ROS_INFO_STREAM(nodeName + ": Grasp command succeeded");
+				}
+				else
+				{
+					gh.setAborted();
+					ROS_INFO_STREAM(nodeName + ": Grasp command aborted");
+					break;
+				}
+
+				break;
+
+			case GraspHandPostureExecutionGoal::RELEASE:
+
+				gh.setAccepted();
+				ROS_INFO_STREAM(nodeName + ": Release command accepted");
+
+				if(open_gripper())
+				{
+					gh.setSucceeded();
+					ROS_INFO_STREAM(nodeName + ": Release command succeeded");
+				}
+				else
+				{
+					gh.setAborted();
+					ROS_INFO_STREAM(nodeName + ": Release command aborted");
+				}
+
+				break;
+
+			default:
+
+				ROS_WARN_STREAM(nodeName + ": Unidentified grasp request, rejecting request");
+				gh.setRejected();
+				break;
+		}
+
+	  }
+
+	  void grasp_cancel_callback(GoalHandle gh)
+	  {
+		std::string nodeName = ros::this_node::getName();
+		ROS_INFO_STREAM(nodeName + ": Canceling current grasp action");
+		gh.setCanceled();
+		ROS_INFO_STREAM(nodeName + ": Current grasp action has been canceled");
+	  }
+
 protected:
 
 	// ros comm
 	ros::ServiceServer soem_io_server_;
+	GraspActionServerPtr grasp_action_server_ptr_;
 
 	// parameters
 	std::string ifname_; // usually eth0
 	std::string device_name_;
 
-	char IOmap_[4096];
+	// theading
+	boost::recursive_mutex process_mutex_;
+	boost::thread* process_data_thread_ptr_;
 
+	// Ethercat
+	char IOmap_[4096];
 
 };
 
@@ -614,8 +764,12 @@ int main(int argc,char** argv)
 {
 	ros::init(argc,argv,"soem_manager");
 	ros::NodeHandle nh;
+	ros::AsyncSpinner spinner(2);
+	spinner.start();
 	SoemManager sm;
 	sm.run();
+
+
 	return 0;
 }
 
