@@ -71,9 +71,9 @@ catkin_package(
 ## Build ##
 ###########
 
-add_executable(grasp_pose_service src/services/grasp_pose_service.cpp)
-add_dependencies(grasp_pose_service ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(grasp_pose_service ${catkin_LIBRARIES})
+#add_executable(grasp_pose_service src/services/grasp_pose_service.cpp)
+#add_dependencies(grasp_pose_service ${PROJECT_NAME}_generate_messages_cpp)
+#target_link_libraries(grasp_pose_service ${catkin_LIBRARIES})
 
 #add_executable(target_recognition_service src/services/target_recognition_service.cpp)
 #add_dependencies(target_recognition_service ${PROJECT_NAME}_generate_messages_cpp)
