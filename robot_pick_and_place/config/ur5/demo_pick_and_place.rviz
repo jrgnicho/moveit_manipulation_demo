@@ -8,8 +8,6 @@ Panels:
         - /Status1
         - /TF1/Frames1
         - /TF1/Tree1
-        - /RobotModel1
-        - /RobotModel1/Links1
         - /RobotModel1/Links1/alignment_surface1
         - /PointCloud21
         - /Marker1/Namespaces1
