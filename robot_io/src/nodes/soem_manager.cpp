@@ -12,7 +12,7 @@
 #include <boost/assign/std/vector.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
-#include <boost/thread/recursive_mutex.hpp>
+//#include <boost/thread/recursive_mutex.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
 
 #include <actionlib/server/action_server.h>
@@ -54,7 +54,10 @@ public:
 
 	SoemManager():
 		ifname_("eth0"),
-		device_name_("")
+		device_name_(""),
+		test_run_mode_(false),
+		grip_force_(100)
+
 	{
 
 	}
@@ -104,7 +107,7 @@ public:
 		//ROS_INFO_STREAM("test bit|byte conversions");
 		//test_conversions();
 
-		if(init() && activate_gripper())
+		if(init() && gripper_activate())
 		{
 			if(test_run_mode_)
 			{
@@ -114,8 +117,8 @@ public:
 			{
 				grasp_action_server_ptr_->start();
 				ROS_INFO_STREAM("Gripper activation complete, action service ready");
+				ros::waitForShutdown();
 			}
-			ros::waitForShutdown();
 		}
 		else
 		{
@@ -130,7 +133,7 @@ public:
 
 		int counter = 10;
 		ros::Duration pause_duration(2.0f);
-		while(close_gripper() && open_gripper() && (counter-- > 0))
+		while(ros::ok() && gripper_close() && gripper_open() && gripper_stop() && (counter-- > 0))
 		{
 			ROS_INFO_STREAM("Close and open sequece completed, waiting");
 			pause_duration.sleep();
@@ -142,9 +145,22 @@ protected:
 	bool load_parameters()
 	{
 		ros::NodeHandle ph("~");
+
+		// optional parameters
+		ph.param<int>("grip_force",grip_force_,grip_force_);
+		ph.param<bool>("test_run_mode",test_run_mode_,test_run_mode_);
+
+		ROS_INFO_STREAM("Parameters:\n\tgrip_force: "<<grip_force_<<", test_run_mode:"<<test_run_mode_);
+
 		bool success =  ph.getParam("ifname",ifname_) &&
-				ph.getParam("device_name",device_name_) &&
-				ph.getParam("test_run_mode",test_run_mode_);
+				ph.getParam("device_name",device_name_);
+
+		ROS_INFO_STREAM("Parameters:\n\t"<<""
+				"grip_force: "<<grip_force_<<
+				", test_run_mode: "<<test_run_mode_<<
+				", ifname: "<<ifname_<<
+				", device_name: "<<device_name_);
+
 		return success;
 	}
 
@@ -320,7 +336,7 @@ protected:
 		return ss.str();
 	}
 
-	bool activate_gripper()
+	bool gripper_activate()
 	{
 		robot_io::RegisterData out_action; //action requested byte
 		robot_io::SoemIO::Request out_registers;
@@ -333,7 +349,7 @@ protected:
 		out_registers.output_data.push_back(out_action);
 
 		// writing registers
-		boost::interprocess::scoped_lock<boost::recursive_mutex> lock(process_mutex_);
+		boost::mutex::scoped_lock lock(process_mutex_);
 		for(int i = 0; i < out_registers.output_data.size();i++)
 		{
 			if(!write_register(out_registers.slave_no,out_registers.output_data[i]))
@@ -382,7 +398,7 @@ protected:
 	}
 
 
-	bool open_gripper()
+	bool gripper_open()
 	{
 		robot_io::RegisterData out_action; //action requested byte
 		robot_io::RegisterData out_position; // position requested byte
@@ -402,7 +418,7 @@ protected:
 		byte_to_bits(125,out_speed.bits);
 		out_speed.info.channel=4;
 
-		byte_to_bits(20,out_force.bits); // kind of weak
+		byte_to_bits(static_cast<uint8>(grip_force_),out_force.bits);
 		out_force.info.channel=5;
 
 		// saving output registers
@@ -412,7 +428,7 @@ protected:
 		out_registers.output_data.push_back(out_force);
 
 		// writing registers
-		boost::interprocess::scoped_lock<boost::recursive_mutex> lock(process_mutex_);
+		boost::mutex::scoped_lock lock(process_mutex_);
 		for(int i = 0; i < out_registers.output_data.size();i++)
 		{
 			if(!write_register(out_registers.slave_no,out_registers.output_data[i]))
@@ -456,7 +472,37 @@ protected:
 		return true;
 	}
 
-	bool close_gripper()
+	bool gripper_stop()
+	{
+		robot_io::RegisterData out_action; //action requested byte
+		robot_io::SoemIO::Request out_registers;
+		out_registers.slave_no = 1;
+
+
+		out_action.bits = list_of(1)(0)(0)(0)(0)(0)(0)(0);// stop
+		out_action.info.channel=0;
+
+		// saving output registers
+		out_registers.output_data.push_back(out_action);
+
+		// writing registers
+		boost::mutex::scoped_lock lock(process_mutex_);
+		for(int i = 0; i < out_registers.output_data.size();i++)
+		{
+			if(!write_register(out_registers.slave_no,out_registers.output_data[i]))
+			{
+				ROS_ERROR_STREAM("write registers operation failed");
+				return false;
+			}
+		}
+		lock.unlock();
+		ros::Duration(0.2f).sleep();
+		print_input_registers(1,0,5);
+
+		return true;
+	}
+
+	bool gripper_close()
 	{
 		robot_io::RegisterData out_action; //action requested byte
 		robot_io::RegisterData out_position; // position requested byte
@@ -476,7 +522,7 @@ protected:
 		byte_to_bits(125,out_speed.bits);
 		out_speed.info.channel=4;
 
-		byte_to_bits(20,out_force.bits); // kind of weak
+		byte_to_bits(static_cast<uint8>(grip_force_),out_force.bits); // kind of weak
 		out_force.info.channel=5;
 
 		// saving output registers
@@ -487,7 +533,7 @@ protected:
 
 		// writing registers
 		ROS_INFO_STREAM("locking process mutex");
-		boost::interprocess::scoped_lock<boost::recursive_mutex> lock(process_mutex_);
+		boost::mutex::scoped_lock lock(process_mutex_);
 		for(int i = 0; i < out_registers.output_data.size();i++)
 		{
 			if(!write_register(out_registers.slave_no,out_registers.output_data[i]))
@@ -653,7 +699,12 @@ protected:
 		ROS_INFO_STREAM("Starting process monitor");
 		while(connected)
 		{
-			//boost::interprocess::scoped_lock<boost::recursive_mutex> lock(process_mutex_);
+/*			boost::mutex::scoped_lock lock(process_mutex_);
+			if(!lock)
+			{
+				continue;
+			}*/
+
 			ec_readstate();
 			for(int i = 0; i <= ec_slavecount;i++)
 			{
@@ -668,7 +719,7 @@ protected:
 
 			ec_send_processdata();
 			ec_receive_processdata(EC_TIMEOUTRET);
-			usleep(5000);
+			usleep(10000);
 		}
 
 		ROS_INFO_STREAM("Exiting process monitor");
@@ -690,7 +741,7 @@ protected:
 				gh.setAccepted();
 				ROS_INFO_STREAM(nodeName + ": Pre-grasp command accepted");
 
-				if(open_gripper())
+				if(gripper_open())
 				{
 					gh.setSucceeded();
 					ROS_INFO_STREAM(nodeName + ": Pre-grasp command succeeded");
@@ -701,6 +752,8 @@ protected:
 					ROS_INFO_STREAM(nodeName + ": Pre-grasp command aborted");
 				}
 
+				gripper_stop();
+
 
 				break;
 
@@ -709,7 +762,7 @@ protected:
 				gh.setAccepted();
 				ROS_INFO_STREAM(nodeName + ": Grasp command accepted");
 
-				if(close_gripper())
+				if(gripper_close())
 				{
 
 					gh.setSucceeded();
@@ -719,8 +772,9 @@ protected:
 				{
 					gh.setAborted();
 					ROS_INFO_STREAM(nodeName + ": Grasp command aborted");
-					break;
 				}
+
+				gripper_stop();
 
 				break;
 
@@ -729,7 +783,7 @@ protected:
 				gh.setAccepted();
 				ROS_INFO_STREAM(nodeName + ": Release command accepted");
 
-				if(open_gripper())
+				if(gripper_open())
 				{
 					gh.setSucceeded();
 					ROS_INFO_STREAM(nodeName + ": Release command succeeded");
@@ -739,6 +793,9 @@ protected:
 					gh.setAborted();
 					ROS_INFO_STREAM(nodeName + ": Release command aborted");
 				}
+
+				gripper_stop();
+
 
 				break;
 
@@ -769,10 +826,10 @@ protected:
 	std::string ifname_; // usually eth0
 	std::string device_name_;
 	bool test_run_mode_;
-	uint8 grip_force_; // 0 - 255
+	int grip_force_; // 0 - 255
 
 	// theading
-	boost::recursive_mutex process_mutex_;
+	boost::mutex process_mutex_;
 	boost::thread* process_data_thread_ptr_;
 
 	// Ethercat
@@ -784,9 +841,11 @@ int main(int argc,char** argv)
 {
 	ros::init(argc,argv,"soem_manager");
 	ros::NodeHandle nh;
-	ros::AsyncSpinner spinner(2);
+	ros::AsyncSpinner spinner(4);
 	spinner.start();
 	SoemManager sm;
+/*	boost::thread t(boost::bind(&SoemManager::run,&sm));
+	t.join();*/
 	sm.run();
 
 
