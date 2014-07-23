@@ -13,8 +13,7 @@ planner_configs:
     type: geometric::RRT
   RRTConnectkConfigDefault:
     type: geometric::RRTConnect
-    range: 0.01
-    goal_bias: 0.5
+    range: 0.05
   RRTstarkConfigDefault:
     type: geometric::RRTstar
   TRRTkConfigDefault:
