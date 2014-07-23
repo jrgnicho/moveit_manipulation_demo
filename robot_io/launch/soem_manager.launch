@@ -3,7 +3,7 @@
 		<arg name="ifname" default="eth1"/>
 		<arg name="device_name" default="ss"/>
 		<arg name="test_run_mode" default="false"/>
-		<arg name="grip_force" default="100"/>
+		<arg name="grip_force" default="150"/>
     <node pkg="robot_io" type="soem_manager" name="gripper_action_server" output="screen">
 		  <param name="ifname" value="$(arg ifname)" type="str"/>
 		  <param name="device_name" value="$(arg device_name)" type="str"/>
