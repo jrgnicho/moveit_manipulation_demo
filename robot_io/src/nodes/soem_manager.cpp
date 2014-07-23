@@ -92,7 +92,6 @@ public:
 	                   boost::bind(&SoemManager::grasp_goal_callback, this, _1),
 	                   boost::bind(&SoemManager::grasp_cancel_callback, this, _1),
 	                   false));
-		grasp_action_server_ptr_->start();
 
 
 		return true;
@@ -107,7 +106,15 @@ public:
 
 		if(init() && activate_gripper())
 		{
-			ROS_INFO_STREAM("Gripper activation complete, action service ready");
+			if(test_run_mode_)
+			{
+				test_run();
+			}
+			else
+			{
+				grasp_action_server_ptr_->start();
+				ROS_INFO_STREAM("Gripper activation complete, action service ready");
+			}
 			ros::waitForShutdown();
 		}
 		else
@@ -136,7 +143,8 @@ protected:
 	{
 		ros::NodeHandle ph("~");
 		bool success =  ph.getParam("ifname",ifname_) &&
-				ph.getParam("device_name",device_name_);
+				ph.getParam("device_name",device_name_) &&
+				ph.getParam("test_run_mode",test_run_mode_);
 		return success;
 	}
 
@@ -379,6 +387,7 @@ protected:
 		robot_io::RegisterData out_action; //action requested byte
 		robot_io::RegisterData out_position; // position requested byte
 		robot_io::RegisterData out_speed; // speed byte ( 0(min) to (255) max )
+		robot_io::RegisterData out_force;
 		robot_io::SoemIO::Request out_registers;
 		out_registers.slave_no = 1;
 
@@ -393,10 +402,14 @@ protected:
 		byte_to_bits(125,out_speed.bits);
 		out_speed.info.channel=4;
 
+		byte_to_bits(20,out_force.bits); // kind of weak
+		out_force.info.channel=5;
+
 		// saving output registers
 		out_registers.output_data.push_back(out_action);
 		out_registers.output_data.push_back(out_position);
 		out_registers.output_data.push_back(out_speed);
+		out_registers.output_data.push_back(out_force);
 
 		// writing registers
 		boost::interprocess::scoped_lock<boost::recursive_mutex> lock(process_mutex_);
@@ -448,6 +461,7 @@ protected:
 		robot_io::RegisterData out_action; //action requested byte
 		robot_io::RegisterData out_position; // position requested byte
 		robot_io::RegisterData out_speed; // speed byte ( 0(min) to (255) max )
+		robot_io::RegisterData out_force;
 		robot_io::SoemIO::Request out_registers;
 		out_registers.slave_no = 1;
 
@@ -462,10 +476,14 @@ protected:
 		byte_to_bits(125,out_speed.bits);
 		out_speed.info.channel=4;
 
+		byte_to_bits(20,out_force.bits); // kind of weak
+		out_force.info.channel=5;
+
 		// saving output registers
 		out_registers.output_data.push_back(out_action);
 		out_registers.output_data.push_back(out_position);
 		out_registers.output_data.push_back(out_speed);
+		out_registers.output_data.push_back(out_force);
 
 		// writing registers
 		ROS_INFO_STREAM("locking process mutex");
@@ -750,6 +768,8 @@ protected:
 	// parameters
 	std::string ifname_; // usually eth0
 	std::string device_name_;
+	bool test_run_mode_;
+	uint8 grip_force_; // 0 - 255
 
 	// theading
 	boost::recursive_mutex process_mutex_;
