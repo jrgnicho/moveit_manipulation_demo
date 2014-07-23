@@ -64,6 +64,9 @@ namespace robot_pick_and_place
 		bool create_motion_plan(const moveit_msgs::RobotState &start_state,
 				const moveit_msgs::RobotState &end_state,move_group_interface::MoveGroup::Plan& plan);
 
+		bool create_cartesian_plan(const geometry_msgs::Pose &tcp_start,
+				const geometry_msgs::Pose &tcp_end,double eef_step,move_group_interface::MoveGroup::Plan& plan);
+
 		void show_target_at_pick(bool show);
 
 		void show_target_at_place(bool show);
@@ -152,6 +155,8 @@ namespace robot_pick_and_place
 		//moveit_msgs::CollisionObject world_obstacles_;
 		moveit_msgs::CollisionObject target_obj_on_world_;
 		moveit_msgs::AttachedCollisionObject target_obj_attached_;
+		geometry_msgs::PoseArray tcp_pick_poses_;
+		geometry_msgs::PoseArray tcp_place_poses_;
 
 		// visualization
 		visualization_msgs::Marker target_marker_;

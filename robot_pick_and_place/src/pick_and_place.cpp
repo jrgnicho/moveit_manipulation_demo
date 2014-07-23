@@ -154,6 +154,8 @@ bool PickAndPlace::pick_and_place_server_callback(
 		// clear results
 		pick_motion_plans_.clear();
 		place_motion_plans_.clear();
+		tcp_pick_poses_.poses.clear();
+		tcp_place_poses_.poses.clear(); // currently not used
 		home_motion_plan_ = move_group_interface::MoveGroup::Plan();
 		show_target_at_place(false);
 		show_target_attached(false);
@@ -410,6 +412,23 @@ bool PickAndPlace::create_motion_plan(const geometry_msgs::Pose &pose_target,
 	return success;
 }
 
+bool PickAndPlace::create_cartesian_plan(const geometry_msgs::Pose &tcp_start,
+		const geometry_msgs::Pose &tcp_end,double eef_step,move_group_interface::MoveGroup::Plan& plan)
+{
+	// creating poses
+	geometry_msgs::PoseArray poses;
+	poses.poses.push_back(tcp_start);
+	poses.poses.push_back(tcp_end);
+
+	// defining planning parameters
+	double jump_threshold = M_PI;
+
+	double res = move_group_ptr->computeCartesianPath(poses.poses,eef_step,jump_threshold,plan.trajectory_,false);
+	ROS_INFO_STREAM("Computed cartesian path with "<<100*res<<"% poses achieved" );
+
+	return res>0; // 100% success rate
+}
+
 bool PickAndPlace::get_grasp_candidates(handle_detector::GraspPoseCandidates::Response& grasp_candidates)
 {
 	using namespace robot_pick_and_place;
@@ -515,6 +534,7 @@ bool PickAndPlace::get_robot_states_at_pick(const handle_detector::GraspPoseCand
 			if(validate_states(rstempts))
 			{
 				// saving results
+				tcp_pick_poses_ = tcp_poses;
 				target_obj_on_world_= grasp_candidates.candidate_collision_objects[i];
 				target_obj_attached_.object = grasp_candidates.candidate_collision_objects[i];
 				target_marker_= grasp_candidates.candidate_objects.markers[i];
@@ -783,7 +803,7 @@ bool PickAndPlace::create_pick_motion_plans(
 	}
 	else
 	{
-		ROS_ERROR_STREAM("Failed to create pick move 1");
+		ROS_ERROR_STREAM("Failed to create pick plan 1");
 		return false;
 	}
 
@@ -803,6 +823,20 @@ bool PickAndPlace::create_pick_motion_plans(
 		return false;
 	}
 
+/*	if(create_cartesian_plan(tcp_pick_poses_.poses[0],tcp_pick_poses_.poses[1],
+			4*cfg.APPROACH_DISTANCE,plan))
+	{
+		plan.start_state_ = pick_states[0];
+		mp.push_back(plan);
+		ROS_INFO_STREAM("Pick cartesian plan 2 completed");
+	}
+	else
+	{
+		ROS_ERROR_STREAM("Failed to create pick cartesian plan 2");
+		return false;
+	}*/
+
+
 	// planning pick move 3
 	if(create_motion_plan(pick_states[1],pick_states[2],plan))
 	{
@@ -815,6 +849,20 @@ bool PickAndPlace::create_pick_motion_plans(
 		return false;
 
 	}
+
+/*	if(create_cartesian_plan(tcp_pick_poses_.poses[1],tcp_pick_poses_.poses[2],
+			4*cfg.RETREAT_DISTANCE,plan))
+	{
+		plan.start_state_ = pick_states[1];
+		mp.push_back(plan);
+		ROS_INFO_STREAM("Pick cartesian plan 3 completed");
+	}
+	else
+	{
+		ROS_ERROR_STREAM("Failed to create pick cartesian plan 3");
+		return false;
+	}*/
+
 	return true;
 }
 
