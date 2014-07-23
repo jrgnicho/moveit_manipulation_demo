@@ -160,6 +160,13 @@ bool PickAndPlace::pick_and_place_server_callback(
 		show_target_at_place(false);
 		show_target_attached(false);
 
+		// open gripper
+		if(!set_gripper(false))
+		{
+			ROS_ERROR_STREAM("Gripper_failure, exiting");
+			break;
+		}
+
 		// moving home
 		move_to_wait_position();
 
@@ -1069,7 +1076,7 @@ void PickAndPlace::add_obstacle_to_planning_scene(const moveit_msgs::CollisionOb
 	add_obstacles_to_planning_scene(obstacles,add);
 }
 
-void PickAndPlace::set_gripper(bool do_grasp)
+bool PickAndPlace::set_gripper(bool do_grasp)
 {
 
   // task variables
@@ -1097,8 +1104,8 @@ void PickAndPlace::set_gripper(bool do_grasp)
   else
   {
     ROS_ERROR_STREAM("Gripper failure");
-    exit(1);
   }
+  return success;
 }
 
 bool PickAndPlace::update_planning_scene()

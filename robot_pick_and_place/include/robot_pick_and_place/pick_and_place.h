@@ -55,7 +55,7 @@ namespace robot_pick_and_place
 
 		void move_to_wait_position();
 
-		void set_gripper(bool do_grasp);
+		bool set_gripper(bool do_grasp);
 
 
 		bool create_motion_plan(const geometry_msgs::Pose &pose_target,
