@@ -75,6 +75,7 @@
 			</link>
 		</xacro:macro>
 
+
 		<!-- geometry macros -->	
 		<xacro:macro name="workcell_geometry" params="length width height *color_block">
 				<geometry>
@@ -139,6 +140,16 @@
 
 		<!--<xacro:work_table_link name="${arm_prefix}worktable" l="1.0" w="1.0" h="0.5"/>-->
 
+		<link name="${arm_prefix}alignment_surface">
+			<visual>
+				<origin xyz="0 0 0" rpy="0 0 0"/>
+				<geometry>
+					<box size="1.2 1.2 0.01"/>
+				</geometry>
+				<material name="blue"/>
+			</visual>
+		</link>
+
 		<link name="ur5_stand">
 			<visual>
 				<geometry>
@@ -188,6 +199,12 @@
 			<parent link="ur5_stand"/>
 			<child link="${arm_prefix}base_link"/>
 			<origin xyz="0 0 ${robot_stand_height * 0.5}" rpy="0 0 -3.1415"/>
+		</joint>
+
+		<joint name="world_to_alignment_surface" type="fixed">
+			<parent link="world_frame"/>
+			<child link="${arm_prefix}alignment_surface"/>
+			<origin xyz="-1.20 0 0" rpy="0 0 0"/>
 		</joint>
 
 		<!--<joint name="world_to_table" type="fixed">
