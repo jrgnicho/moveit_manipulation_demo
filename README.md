@@ -2,9 +2,10 @@ moveit_manipulation_demo
 ========================
 
 
-########################################################################################################################
+###############################################################################################################
 INSTRUCTIONS TO START DEMO
- 1 - Open ROS ready terminal
+
+ 	1 - Open ROS ready terminal
 
 		1.1 - In a new terminal run the following to bring up the "ROS" terminals
 			
